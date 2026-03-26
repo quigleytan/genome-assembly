@@ -19,7 +19,7 @@
 #define RECORDER_H
 
 #include <string>
-#include "Visualization/VisData.h"
+#include "VisData.h"
 
 class Recorder {
 private:

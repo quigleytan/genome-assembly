@@ -1,0 +1,13 @@
+>Scaffold_1 contigs=20 strategy=greedy k=4
+GTACTACGACGTCGTAGTACTACGACGTCGTAGTACTACCACCTCCTTCTTGTTGGTGGA
+GGAAGAACAACCACCTCCTT
+>Scaffold_2 contigs=1 strategy=greedy k=4
+GTAC
+>Scaffold_3 contigs=3 strategy=greedy k=4
+GGAAGAACAACC
+>Scaffold_4 contigs=2 strategy=greedy k=4
+ACGTCGTA
+>Scaffold_5 contigs=1 strategy=greedy k=4
+CGTA
+>Scaffold_6 contigs=1 strategy=greedy k=4
+TTGG

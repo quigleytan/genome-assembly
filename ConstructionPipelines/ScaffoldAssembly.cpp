@@ -14,16 +14,66 @@
 #include "../GenomeAssembly/ContigTraversal.h"
 #include "../GenomeAssembly/ContigScaffolder.h"
 
-// ─────────────────────────────────────────────
 // CONSTANTS
-// ─────────────────────────────────────────────
 
 static constexpr size_t UNKNOWN_GAP_NS   = 100;
 static constexpr size_t FASTA_LINE_WIDTH = 60;
 
-// ─────────────────────────────────────────────
+static constexpr size_t INTER_SCAFFOLD_NS = 100; // Number of Ns between scaffolds
+
+/**
+ * @brief Writes a full pseudo-genome by concatenating scaffolds and
+ *        inserting N's between them for unknown gaps.
+ *
+ * @param scaffolds  Vector of Scaffold objects from ContigScaffolder
+ * @param contigs    Original vector of contigs
+ * @param genomeName Name for the output genome (FASTA header)
+ * @param outputPath Path to write the FASTA file
+ */
+void writeFullGenomeFasta(
+    const std::vector<Scaffold>& scaffolds,
+    const std::vector<ContigTraversal::Contig>& contigs,
+    const std::string& genomeName,
+    const std::string& outputPath)
+{
+    std::ofstream out(outputPath);
+    if (!out.is_open()) {
+        throw std::runtime_error("Could not write output file: " + outputPath);
+    }
+
+    // Build full genome sequence
+    std::string fullGenome;
+    for (size_t i = 0; i < scaffolds.size(); ++i) {
+        const Scaffold& scaffold = scaffolds[i];
+
+        // Append contigs in scaffold
+        for (size_t j = 0; j < scaffold.entries.size(); ++j) {
+            const ScaffoldEntry& entry = scaffold.entries[j];
+            fullGenome += contigs[entry.contigIndex].sequence;
+        }
+
+        // Add N's between scaffolds (but not after the last scaffold)
+        if (i + 1 < scaffolds.size()) {
+            fullGenome += std::string(INTER_SCAFFOLD_NS, 'N');
+        }
+    }
+
+    // Write FASTA header
+    out << ">" << genomeName
+        << " scaffolds=" << scaffolds.size()
+        << " gapNs=" << INTER_SCAFFOLD_NS
+        << "\n";
+
+    // Wrap sequence at FASTA_LINE_WIDTH
+    for (size_t pos = 0; pos < fullGenome.size(); pos += FASTA_LINE_WIDTH) {
+        out << fullGenome.substr(pos, FASTA_LINE_WIDTH) << "\n";
+    }
+
+    out.close();
+    std::cout << "Full pseudo-genome written to: " << outputPath << "\n";
+}
+
 // STAGE 1 — Load reads from FASTQ into KmerTable
-// ─────────────────────────────────────────────
 
 /**
  * @brief Opens a FASTQ file and encodes all reads into a KmerTable.
@@ -51,9 +101,7 @@ static KmerTable loadReads(const std::string& path, size_t k, size_t totalBases)
     return kTable;
 }
 
-// ─────────────────────────────────────────────
 // STAGE 2 — Build De Bruijn graph from KmerTable
-// ─────────────────────────────────────────────
 
 /**
  * @brief Populates a DeBruijnGraph from an already-encoded KmerTable.
@@ -77,9 +125,7 @@ static DeBruijnGraph buildGraph(const KmerTable& kTable, size_t k) {
     return graph;
 }
 
-// ─────────────────────────────────────────────
 // STAGE 3 — Contig traversal
-// ─────────────────────────────────────────────
 
 /**
  * @brief Runs ContigTraversal on the graph and returns the contig list.
@@ -96,9 +142,7 @@ static std::vector<ContigTraversal::Contig> buildContigs(DeBruijnGraph& graph) {
     return ct.getContigs();
 }
 
-// ─────────────────────────────────────────────
 // STAGE 4 — Scaffold and report
-// ─────────────────────────────────────────────
 
 /**
  * @brief Runs ContigScaffolder with the given strategy and prints stats.
@@ -125,9 +169,7 @@ static ContigScaffolder buildScaffolds(
     return scaffolder;
 }
 
-// ─────────────────────────────────────────────
 // STAGE 5 — Write gap-aware FASTA output
-// ─────────────────────────────────────────────
 
 /**
  * @brief Writes scaffolds to a gap-aware FASTA file.
@@ -189,9 +231,8 @@ static void writeScaffoldFasta(
     std::cout << "Output written:  " << filename << "\n";
 }
 
-// ─────────────────────────────────────────────
 // MAIN
-// ─────────────────────────────────────────────
+
 
 int main() {
     try {
@@ -202,7 +243,7 @@ int main() {
         // A rough upper bound is fine; KmerTable sizes conservatively
         const size_t estimatedTotalBases = 100000;
 
-        const std::vector<size_t> kValues = {9};
+        const std::vector<size_t> kValues = {4};
 
         const std::vector<std::pair<ResolutionStrategy, std::string>> strategies = {
             { ResolutionStrategy::skip(),   "skip"   },
@@ -236,6 +277,21 @@ int main() {
                     scaffolder.getScaffolds(), contigs, k, strategyName);
             }
         }
+
+        size_t k = 9;
+        KmerTable kTable  = loadReads(path, k, estimatedTotalBases);
+        DeBruijnGraph graph = buildGraph(kTable, k);
+        auto contigs        = buildContigs(graph);
+
+        // Pass kTable pointer only for scored — skip/greedy don't need it
+        const KmerTable* kTablePtr = &kTable;
+
+        ContigScaffolder scaffolder =
+            buildScaffolds(contigs, graph, ResolutionStrategy::scored(), kTablePtr);
+        writeFullGenomeFasta(scaffolder.getScaffolds(), contigs,
+    "Escherichia_pseudo_genome",
+    "../Data/Results/full_reconstructed_genome.fna"
+);
 
     } catch (const std::exception& e) {
         std::cout << "Error: " << e.what() << "\n";
