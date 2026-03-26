@@ -19,6 +19,8 @@
 
 #include <cstdint>
 #include <vector>
+#include <algorithm>
+#include <stdexcept>
 
 #include "KmerTypes.h"
 #include "DataProcessing/OpenAddressingTable.h"

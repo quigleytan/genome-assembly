@@ -1,15 +1,16 @@
-# M2OEP-tequigle: Gene Sequencing Toolkit
+# M4OEP-tequigle: Gene Reconstruction and Assembly Toolkit
 Author: Tanner Quigley
 ### About
-This project is a C++/Python implementation of a bioinformatics toolkit to analyze DNA sequences, simulating mutations, and assembling genomes efficiently.
+This project is a C++ implementation of a bioinformatics toolkit to analyze DNA sequences, reconstruct linear and 
+circular genomes, and visualize genome assembly.
 ### Features
 - DNA sequence representation and k-mer analysis.
-- Genome assembly using de Bruijn graphs and graph traversal.
 - Performance optimization for large datasets.
 - Implementation of custom data structures.
-- Visualization of DNA sequences and eulerian walks.
+- Eulerian path computation and visualization.
+- K-mer, contig, and scaffold construction and visualization.
 
-## Module by Module Quick Overview
+## Brief Overview
 ***
 ### Module 1: DNA Sequence Representation and K-mer Analysis
 Implementation of data structures to hold, analyze, and conduct basic analysis on genomic sequences.
@@ -27,14 +28,17 @@ edges, as this is crucial from Eulerian walk assembly.
 - `InitializationTests`, `ProcessingTests`, `AssemblyTests`: Tests proper logical data manipulation, file I/O, and
 implementation of data structures.
 
-### Module 3: Genome Assembly Using de Bruijn Graphs
+### Module 3: Genome Reconstruction and Assembly
 Eulerian walk implementation for genome assembly.
 
 ### Module 4:
 Visualization of DNA sequences and assembly results using C++ graphics.
 
-------------------
-## Module 1 Summary
+## Full Overview and Report
+
+***
+
+### Module 1
 This module focused on creating classes and laying out the groundwork for future scaling of my gene sequencer. The main
 classes created were DNASequence, KmerCounter, and KmerEncoder. Each class has its own header and implementation files,
 with proper documentation for each method and member variable. These files allow for storage of DNA sequences and its
@@ -48,30 +52,9 @@ modules, and I didn't want to overcomplicate the code with unnecessary features.
 stage is complete, and it serves as the middle ground between reading file information and producing a final output of
 an assembled genome.
 
-### Sources Used
-
-Usage of static: https://www.geeksforgeeks.org/cpp/static-keyword-cpp/
-
-How to write proper documentation: https://developer.lsst.io/cpp/api-docs.html
-
-Usage of auto: https://www.geeksforgeeks.org/cpp/type-inference-in-c-auto-and-decltype/
-
-Exceptions: https://www.geeksforgeeks.org/cpp/how-to-throw-custom-exception-in-cpp/
-
-#### DNASequence
-
-Helper functions: https://www.w3tutorials.net/blog/what-are-helper-functions-in-c/
-
-Size_t: https://www.geeksforgeeks.org/cpp/difference-between-int-and-size_t-in-cpp/
-
-Switch and cases: https://www.w3schools.com/cpp/cpp_switch.asp
-
-#### KmerEncoder
-Bitshift and masking help: https://www.geeksforgeeks.org/cpp/left-shift-right-shift-operators-c-cpp/
-
 ***
 
-## Module 2 Summary
+### Module 2
 
 This module was focused around reading in FASTA files and implementation of a De Bruijn graph. File I/O will allow for
 testing with much larger datasets and better program flow, as before I would prompt for a short sequence from the user.
@@ -93,7 +76,7 @@ storage, file reading, and graph logic all work as intended. They are split up i
 are intended to be run in the order they are listed in the Module 2 quick overview, as each stage is reliant on the ones
 before it. For more information regarding my testing files and outputs, see the testing section of the `README.md`.
 
-## Testing Summary
+### Testing Summary
 I wanted to explain my testing cases, especially for `AssemblyTests.cpp`, as the values being tested for can seem a bit
 arbitrary. Starting with `InitializationTests.cpp`, I am just checking to make sure that the information being read in
 from the FASTA file is correct, and that basic DNA sequence information is correct. Next, `ProcessingTests.cpp` is
@@ -123,20 +106,33 @@ are two prefix occurrences and one suffix occurrence. This gives us our indegree
 will include more robust testing for checking expected neighbors and transitions. As of now, the tests I have run
 through `main.cpp` align with expected outputs regarding possible neighbors, but I still need to test for edge cases.
 
-### Sources Used
+### Module 3
 
-#### OpenAddressingTable
+Whilst I did not submit anything for this module, I still wanted to write this section to give a bit of background and
+explanation to the processes and file seen in the jump from module 2 to 4. The freedom of disregarding module
+requirements allowed me to make significant progress on the assembly algorithms/pipelines. I implemented a simple
+Eulerian walk algorithm that traces a non-repeating path through the graph. This was able to reconstruct simple genomes 
+given that the size of repeats in the sequence was below a certain k threshold. I expanded my handling of k-values up
+to 63 by using `__uint128_t`. I was able to reconstruct the genome of Escherichia phage phiX174, which consists of
+roughly 5000 bases. However, as predicted, this algorithm was not able to reconstruct the genome of Escherichia coli K12
+due to the sheer size of the repeats in the sequence. Whilst Eulerian walks are able to process repeats, it requires
+the k value used to exceed the length of said repeats. In a genome with a very large number of repeats such as 
+Escherichia coli, the algorithm constantly takes the wrong path, resulting in an assembled but incorrect genome. 
+`EulerianTraversal.cpp` effectively served as a proof of concept for sequence reconstruction, and gave me an outline for
+`ContigTraversal.cpp` and `ContigScaffolder.cpp`.
 
-Implementation of an iterator: https://stackoverflow.com/questions/46431762/how-to-implement-standard-iterators-in-class
+By using a new pipeline using multi-stage traversal which included different construction strategies that help the
+algorithm pick which path is most likely to be correct, greatly increase the chance of a correct assembly. The contigs
+are generated from the k-mers in the graph by tracing through looking for overlaps and k-mer adjacency, similar to the
+original algorithm. Once the contigs are generated, they are ordered and assembled into scaffolds, which are then
+assembled into the final genome.
 
-#### DeBruijnGraph
+### Module 4
 
-Reference source for usage of auto from Module 1
 
-Use of nodiscard: https://stackoverflow.com/questions/76489630/explanation-of-nodiscard-in-c17
 
-Use of explicit: https://www.geeksforgeeks.org/cpp/use-of-explicit-keyword-in-cpp/
 
+Visualization piepline
 Step 1 — CMakeLists.txt changes (FetchContent + Visualizer executable)
 Step 2 — VisData.h (all shared structs, no dependencies)
 Step 3 — Recorder.h (header-only step recorder, optional ptr in traversal classes)
@@ -146,3 +142,24 @@ Step 6 — Modify ContigTraversal.cpp (~10 lines, non-breaking)
 Step 7 — Modify ContigScaffolder.cpp (~10 lines, non-breaking)
 Step 8 — ContigView.h/.cpp (bar renderer + animation)
 Step 9 — VisualizerApp.cpp (window, loop, top-level state)
+
+
+
+
+
+### References
+
+| Module / Area       | Topic                          | Link                                                                 |
+|--------------------|--------------------------------|----------------------------------------------------------------------|
+| General            | Usage of static                | https://www.geeksforgeeks.org/cpp/static-keyword-cpp/               |
+| General            | Documentation guidelines       | https://developer.lsst.io/cpp/api-docs.html                         |
+| General            | Usage of auto                  | https://www.geeksforgeeks.org/cpp/type-inference-in-c-auto-and-decltype/ |
+| General            | Exceptions                     | https://www.geeksforgeeks.org/cpp/how-to-throw-custom-exception-in-cpp/ |
+| DNASequence        | Helper functions               | https://www.w3tutorials.net/blog/what-are-helper-functions-in-c/     |
+| DNASequence        | size_t                         | https://www.geeksforgeeks.org/cpp/difference-between-int-and-size_t-in-cpp/ |
+| DNASequence        | Switch and cases               | https://www.w3schools.com/cpp/cpp_switch.asp                        |
+| KmerEncoder        | Bitshift and masking           | https://www.geeksforgeeks.org/cpp/left-shift-right-shift-operators-c-cpp/ |
+| OpenAddressingTable| Iterator implementation        | https://stackoverflow.com/questions/46431762/how-to-implement-standard-iterators-in-class |
+| DeBruijnGraph      | Usage of auto                  | Reference source from Module 1                                       |
+| DeBruijnGraph      | Use of [[nodiscard]]           | https://stackoverflow.com/questions/76489630/explanation-of-nodiscard-in-c17 |
+| DeBruijnGraph      | Use of explicit                | https://www.geeksforgeeks.org/cpp/use-of-explicit-keyword-in-cpp/    |

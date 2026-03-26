@@ -76,8 +76,8 @@ add_executable(ScaffoldAssembly
 )
 target_include_directories(ScaffoldAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
-add_executable(EulerianAssembly
-        ConstructionPipelines/EulerianAssembly.cpp
+add_executable(FastaEulerianAssembly
+        ConstructionPipelines/FastaEulerianAssembly.cpp
         DataList.cpp
         DataInitialization/DNASequence.cpp
         DataInitialization/SequenceReader.cpp
@@ -85,7 +85,7 @@ add_executable(EulerianAssembly
         GenomeAssembly/DeBruijnGraph.cpp
         GenomeAssembly/EulerianTraversal.cpp
 )
-target_include_directories(EulerianAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
+target_include_directories(FastaEulerianAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(FastaContigAssembly
         ConstructionPipelines/FastaContigAssembly.cpp

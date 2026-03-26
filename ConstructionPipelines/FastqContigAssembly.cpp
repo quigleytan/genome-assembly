@@ -12,17 +12,11 @@
 #include "../GenomeAssembly/DeBruijnGraph.h"
 #include "../GenomeAssembly/ContigTraversal.h"
 
-// ─────────────────────────────────────────────
 // CONFIGURATION
-// ─────────────────────────────────────────────
 
-// Adjust to match your reads file — rough upper bound is fine.
-// KmerTable will not rehash if it fills, so err on the high side.
 static constexpr size_t ESTIMATED_TOTAL_BASES = 100000;
 
-// ─────────────────────────────────────────────
 // PIPELINE STAGES
-// ─────────────────────────────────────────────
 
 /**
  * @brief Stage 1 — Load FASTQ reads into a KmerTable.
@@ -79,9 +73,9 @@ static void assembleContigs(DeBruijnGraph& graph) {
     ct.printStats();
 }
 
-// ─────────────────────────────────────────────
+
 // MAIN
-// ─────────────────────────────────────────────
+
 
 int main() {
     try {

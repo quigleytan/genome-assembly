@@ -9,6 +9,7 @@
 #include "../DataProcessing/KmerTable.h"
 #include "../GenomeAssembly/DeBruijnGraph.h"
 #include "../GenomeAssembly/EulerianTraversal.h"
+#include "DataList.h"
 
 // HELPER FUNCTION
 
@@ -148,7 +149,7 @@ static void reportResults(const DNASequence& original, const std::string& assemb
 
 int main() {
     try {
-        const std::string path = "../Data/[1]Escherichia phage phiX174.fna";
+        const std::string path = "../Data/" + sequence[1];
 
         DNASequence genome = loadGenome(path);
         std::cout << genome.getName() << "\n";
