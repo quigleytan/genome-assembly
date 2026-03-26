@@ -34,15 +34,15 @@ static DNASequence loadGenome(const std::string& path) {
 
 /**
  * @brief Encodes a DNA sequence into a DeBruijn graph.
- * @param sequence Input DNA sequence string.
+ * @param seq Input DNA sequence string.
  * @param k K-mer size to use for encoding.
  * @param circular If true, circularizes the sequence before encoding.
  * @return Populated DeBruijnGraph ready for traversal.
  */
-static DeBruijnGraph buildGraph(const std::string& sequence, int k, bool circular = false) {
+static DeBruijnGraph buildGraph(const std::string& seq, int k, bool circular = false) {
     std::string inputSequence = circular
-        ? sequence + sequence.substr(0, k - 1)
-        : sequence;
+        ? seq + seq.substr(0, k - 1)
+        : seq;
 
     KmerTable kTable(inputSequence.length(), k);
     KmerEncoding::encodeSequence(inputSequence, k, kTable);
@@ -64,7 +64,7 @@ static DeBruijnGraph buildGraph(const std::string& sequence, int k, bool circula
  * @param graph Populated DeBruijnGraph to traverse.
  * @param sequence Original DNASequence for reference.
  */
-static void assembleContigs(DeBruijnGraph& graph, const DNASequence& sequence, int k) {
+static void assembleContigs(DeBruijnGraph& graph) {
     ContigTraversal ct(graph);
     ct.computeContigs();
     ct.printStats();
@@ -87,7 +87,7 @@ int main() {
             int k = testCases[i];
             std::cout << "TEST CASE [" << i + 1 << "]: k = " << k << std::endl;
             DeBruijnGraph graph = buildGraph(genome.getSequence(), k, false);
-            assembleContigs(graph, genome, k);
+            assembleContigs(graph);
         }
 
     } catch (const std::exception& e) {
