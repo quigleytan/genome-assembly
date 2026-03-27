@@ -53,6 +53,7 @@ target_include_directories(ImGui PUBLIC
         ${imgui_SOURCE_DIR}/backends
         ${glfw_SOURCE_DIR}/include
 )
+
 target_link_libraries(ImGui PUBLIC glfw)
 if (WIN32)
     target_link_libraries(ImGui PUBLIC opengl32)
@@ -63,6 +64,13 @@ endif()
 set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
 
 # ASSEMBLY EXECUTABLES
+
+add_executable(FullReconstruction
+        GenomeConstruction/GapEstimation.cpp
+        GenomeConstruction/GapFilling.cpp
+)
+
+set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
 
 add_executable(ScaffoldAssembly
         ConstructionPipelines/ScaffoldAssembly.cpp

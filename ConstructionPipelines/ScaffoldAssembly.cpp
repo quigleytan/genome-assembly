@@ -10,9 +10,9 @@
 #include "../DataProcessing/KmerEncoding.h"
 #include "../DataProcessing/KmerTable.h"
 
-#include "../GenomeAssembly/DeBruijnGraph.h"
-#include "../GenomeAssembly/ContigTraversal.h"
-#include "../GenomeAssembly/ContigScaffolder.h"
+#include "../ScaffoldConstruction/DeBruijnGraph.h"
+#include "../ScaffoldConstruction/ContigScaffolder.h"
+#include "../ScaffoldConstruction/ContigTraversal.h"
 
 // CONSTANTS
 
