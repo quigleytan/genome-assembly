@@ -16,10 +16,10 @@
 
 // CONSTANTS
 
-static constexpr size_t UNKNOWN_GAP_NS   = 100;
+static constexpr size_t UNKNOWN_GAP_NS   = 10;
 static constexpr size_t FASTA_LINE_WIDTH = 60;
 
-static constexpr size_t INTER_SCAFFOLD_NS = 100; // Number of Ns between scaffolds
+static constexpr size_t INTER_SCAFFOLD_NS = 10; // Number of Ns between scaffolds
 
 /**
  * @brief Writes a full pseudo-genome by concatenating scaffolds and

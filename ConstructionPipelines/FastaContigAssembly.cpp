@@ -8,8 +8,8 @@
 #include "../DataProcessing/KmerEncoding.h"
 #include "../DataProcessing/KmerTable.h"
 
-#include "../GenomeAssembly/DeBruijnGraph.h"
-#include "../GenomeAssembly/ContigTraversal.h"
+#include "../ScaffoldConstruction/DeBruijnGraph.h"
+#include "../ScaffoldConstruction/ContigTraversal.h"
 
 // PIPELINE STAGES
 

@@ -70,9 +70,9 @@ add_executable(ScaffoldAssembly
         DataInitialization/DNASequence.cpp
         DataInitialization/SequenceReader.cpp
         DataProcessing/KmerEncoding.cpp
-        GenomeAssembly/DeBruijnGraph.cpp
-        GenomeAssembly/ContigTraversal.cpp
-        GenomeAssembly/ContigScaffolder.cpp
+        ScaffoldConstruction/DeBruijnGraph.cpp
+        ScaffoldConstruction/ContigTraversal.cpp
+        ScaffoldConstruction/ContigScaffolder.cpp
 )
 target_include_directories(ScaffoldAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
@@ -82,8 +82,8 @@ add_executable(FastaEulerianAssembly
         DataInitialization/DNASequence.cpp
         DataInitialization/SequenceReader.cpp
         DataProcessing/KmerEncoding.cpp
-        GenomeAssembly/DeBruijnGraph.cpp
-        GenomeAssembly/EulerianTraversal.cpp
+        ScaffoldConstruction/DeBruijnGraph.cpp
+        ScaffoldConstruction/EulerianTraversal.cpp
 )
 target_include_directories(FastaEulerianAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
@@ -93,9 +93,9 @@ add_executable(FastaContigAssembly
         DataInitialization/DNASequence.cpp
         DataInitialization/SequenceReader.cpp
         DataProcessing/KmerEncoding.cpp
-        GenomeAssembly/DeBruijnGraph.cpp
-        GenomeAssembly/ContigTraversal.cpp
-        GenomeAssembly/ContigScaffolder.cpp
+        ScaffoldConstruction/DeBruijnGraph.cpp
+        ScaffoldConstruction/ContigTraversal.cpp
+        ScaffoldConstruction/ContigScaffolder.cpp
 )
 target_include_directories(FastaContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
@@ -105,8 +105,8 @@ add_executable(FastqContigAssembly
         DataInitialization/DNASequence.cpp
         DataInitialization/SequenceReader.cpp
         DataProcessing/KmerEncoding.cpp
-        GenomeAssembly/DeBruijnGraph.cpp
-        GenomeAssembly/ContigTraversal.cpp
+        ScaffoldConstruction/DeBruijnGraph.cpp
+        ScaffoldConstruction/ContigTraversal.cpp
 )
 target_include_directories(FastqContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
@@ -129,11 +129,11 @@ target_include_directories(ProcessingTests PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(ConstructionTests
         DataList.cpp
-        GenomeAssembly/ConstructionTests.cpp
-        GenomeAssembly/DeBruijnGraph.cpp
-        GenomeAssembly/EulerianTraversal.cpp
-        GenomeAssembly/ContigTraversal.cpp
-        GenomeAssembly/ContigScaffolder.cpp
+        ScaffoldConstruction/ConstructionTests.cpp
+        ScaffoldConstruction/DeBruijnGraph.cpp
+        ScaffoldConstruction/EulerianTraversal.cpp
+        ScaffoldConstruction/ContigTraversal.cpp
+        ScaffoldConstruction/ContigScaffolder.cpp
         DataProcessing/KmerEncoding.cpp
         DataInitialization/DNASequence.cpp
 )
@@ -150,10 +150,10 @@ add_executable(Visualizer
         DataInitialization/DNASequence.cpp
         DataInitialization/SequenceReader.cpp
         DataProcessing/KmerEncoding.cpp
-        GenomeAssembly/DeBruijnGraph.cpp
-        GenomeAssembly/EulerianTraversal.cpp
-        GenomeAssembly/ContigTraversal.cpp
-        GenomeAssembly/ContigScaffolder.cpp
+        ScaffoldConstruction/DeBruijnGraph.cpp
+        ScaffoldConstruction/EulerianTraversal.cpp
+        ScaffoldConstruction/ContigTraversal.cpp
+        ScaffoldConstruction/ContigScaffolder.cpp
 )
 
 target_include_directories(Visualizer PRIVATE

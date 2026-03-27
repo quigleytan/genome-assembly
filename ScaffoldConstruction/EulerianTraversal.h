@@ -18,7 +18,7 @@
 #include <string>
 
 #include "KmerTypes.h"
-#include "GenomeAssembly/DeBruijnGraph.h"
+#include "ScaffoldConstruction/DeBruijnGraph.h"
 #include "DataProcessing/OpenAddressingTable.h"
 
 

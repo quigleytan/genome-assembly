@@ -7,8 +7,8 @@
 #include "../DataInitialization/SequenceReader.h"
 #include "../DataProcessing/KmerEncoding.h"
 #include "../DataProcessing/KmerTable.h"
-#include "../GenomeAssembly/DeBruijnGraph.h"
-#include "../GenomeAssembly/EulerianTraversal.h"
+#include "../ScaffoldConstruction/DeBruijnGraph.h"
+#include "../ScaffoldConstruction/EulerianTraversal.h"
 #include "DataList.h"
 
 // HELPER FUNCTION

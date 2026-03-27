@@ -19,8 +19,8 @@
 #include <string>
 
 #include "KmerTypes.h"
-#include "GenomeAssembly/DeBruijnGraph.h"
-#include "GenomeAssembly/ContigTraversal.h"
+#include "ScaffoldConstruction/DeBruijnGraph.h"
+#include "ScaffoldConstruction/ContigTraversal.h"
 #include "DataProcessing/KmerTable.h"
 #include "DataProcessing/OpenAddressingTable.h"
 

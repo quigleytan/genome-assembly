@@ -21,7 +21,7 @@
 
 #include "KmerTypes.h"
 #include "Recorder.h"
-#include "GenomeAssembly/DeBruijnGraph.h"
+#include "ScaffoldConstruction/DeBruijnGraph.h"
 #include "DataProcessing/OpenAddressingTable.h"
 
 class ContigTraversal {

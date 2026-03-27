@@ -1,100 +1,105 @@
 /*
- * DataExporter.h
+ * DataLoader.h
  * Summary:
- * - Serializes a VisSession to a plain-text .visdata file.
- * - Called at the end of a pipeline run when visualization is requested.
- * - The .visdata format is line-oriented and human-readable, making it
- *   easy to inspect and debug without a special tool.
+ * - Deserializes a .visdata file written by DataExporter into a VisSession.
+ * - Called by VisualizerApp at startup when a file is selected.
+ * - Validates the format version before parsing and throws descriptively
+ *   on any malformed line so the user knows exactly what went wrong.
  * Important notes:
- * - NodeId (__uint128_t) is written as two hex uint64_t values
- *   separated by ':' since __uint128_t has no standard stream support.
- * - Strings that may contain spaces (sequences, labels, file paths) are
- *   always written last on their line so the loader can use getline.
- * - The file is self-describing: a VERSION header lets the loader reject
- *   files written by an incompatible older exporter.
+ * - NodeId hi:lo hex pairs are decoded back into __uint128_t.
+ * - RUN blocks in the contig step section are expanded into individual
+ *   BaseAppended steps so ContigView's animator sees a flat step list.
+ * - Section order in the file must match DataExporter's write order.
+ *   Unknown section headers are skipped for forward compatibility.
  */
 
-#ifndef DATA_EXPORTER_H
-#define DATA_EXPORTER_H
+#ifndef DATA_LOADER_H
+#define DATA_LOADER_H
 
 #include <string>
 #include "VisData.h"
 
-class DataExporter {
+class DataLoader {
 
 public:
 
     /**
-     * @brief Writes a VisSession to a .visdata file at the given path.
+     * @brief Reads a .visdata file and returns a fully populated VisSession.
      *
-     * Creates or overwrites the file. Throws std::runtime_error if the
-     * file cannot be opened for writing.
+     * Throws std::runtime_error if:
+     *  - The file cannot be opened
+     *  - The format version is incompatible
+     *  - Any required section is missing or malformed
      *
-     * @param session  The fully populated VisSession to serialize.
-     * @param filePath Output file path (e.g. "../Data/Results/run.visdata").
+     * @param filePath Path to the .visdata file to load.
+     * @return Populated VisSession ready for the visualizer.
      */
-    static void write(const VisSession& session, const std::string& filePath);
+    static VisSession load(const std::string& filePath);
 
 private:
 
-    // Current file format version. Increment if the format changes
-    // in a way that breaks backward compatibility with DataLoader.
     static constexpr int FORMAT_VERSION = 1;
 
     /**
-     * @brief Encodes a NodeId as "hi:lo" hex string.
-     * Splits __uint128_t into two uint64_t halves for portable serialization.
+     * @brief Decodes a "hi:lo" hex string back into a NodeId (__uint128_t).
+     * @throws std::runtime_error if the string is not valid hi:lo format.
      */
-    static std::string encodeNodeId(NodeId id);
+    static NodeId decodeNodeId(const std::string& encoded);
 
     /**
-     * @brief Writes the SESSION header block.
-     * Contains version, k, sourceFile, and strategyName.
+     * @brief Parses the header block, validates version, fills session metadata.
+     * Reads until END_HEADER. Returns a struct of the counts declared in the header
+     * so the loader can pre-reserve vectors before parsing each section.
      */
-    static void writeHeader(std::ostream& out, const VisSession& session);
+    struct HeaderCounts {
+        size_t contigCount   = 0;
+        size_t scaffoldCount = 0;
+        size_t nodeCount     = 0;
+        size_t edgeCount     = 0;
+        size_t contigSteps   = 0;
+        size_t eulerSteps    = 0;
+    };
+    static HeaderCounts parseHeader(std::istream& in, VisSession& session);
 
     /**
-     * @brief Writes all VisContig entries.
-     * Format per contig:
-     *   CONTIG <index> <length> <circular> <score> <scaffoldIndex>
-     *           <startNodeHi:Lo> <endNodeHi:Lo> <startLabel> <endLabel>
-     *   SEQ <sequence>
+     * @brief Parses the BEGIN_CONTIGS ... END_CONTIGS block.
      */
-    static void writeContigs(std::ostream& out, const VisSession& session);
+    static void parseContigs(std::istream& in, VisSession& session,
+                             const HeaderCounts& counts);
 
     /**
-     * @brief Writes all VisScaffold entries.
-     * Format per scaffold:
-     *   SCAFFOLD <index> <circular> <contigCount>
-     *   MEMBERS <idx0> <idx1> ...
-     *   GAPS    <gap0> <gap1> ...
+     * @brief Parses the BEGIN_SCAFFOLDS ... END_SCAFFOLDS block.
      */
-    static void writeScaffolds(std::ostream& out, const VisSession& session);
+    static void parseScaffolds(std::istream& in, VisSession& session,
+                               const HeaderCounts& counts);
 
     /**
-     * @brief Writes all VisNode entries (phase 2 — may be empty in phase 1).
+     * @brief Parses the BEGIN_NODES ... END_NODES block (phase 2).
+     * Produces an empty node list if the block is present but empty.
      */
-    static void writeNodes(std::ostream& out, const VisSession& session);
+    static void parseNodes(std::istream& in, VisSession& session,
+                           const HeaderCounts& counts);
 
     /**
-     * @brief Writes all VisEdge entries (phase 2 — may be empty in phase 1).
+     * @brief Parses the BEGIN_EDGES ... END_EDGES block (phase 2).
+     * Produces an empty edge list if the block is present but empty.
      */
-    static void writeEdges(std::ostream& out, const VisSession& session);
+    static void parseEdges(std::istream& in, VisSession& session,
+                           const HeaderCounts& counts);
 
     /**
-     * @brief Writes the contig animation step list.
-     * Each step is one line. BaseAppended steps are compacted into
-     * run-length encoded RUN blocks to keep file size manageable
-     * for long sequences.
+     * @brief Parses the BEGIN_CONTIG_STEPS ... END_CONTIG_STEPS block.
+     * Expands RUN blocks into individual BaseAppended steps.
      */
-    static void writeContigSteps(std::ostream& out, const VisSession& session);
+    static void parseContigSteps(std::istream& in, VisSession& session,
+                                 const HeaderCounts& counts);
 
     /**
-     * @brief Writes the Eulerian animation step list (phase 2).
-     * Empty in phase 1 runs but writes the section header so the
-     * loader always finds the block.
+     * @brief Parses the BEGIN_EULER_STEPS ... END_EULER_STEPS block.
+     * Produces an empty step list if the block is present but empty.
      */
-    static void writeEulerSteps(std::ostream& out, const VisSession& session);
+    static void parseEulerSteps(std::istream& in, VisSession& session,
+                                const HeaderCounts& counts);
 };
 
-#endif // DATA_EXPORTER_H
+#endif // DATA_LOADER_H
