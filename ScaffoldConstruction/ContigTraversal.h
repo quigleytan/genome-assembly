@@ -10,6 +10,8 @@
  * - Operates on an already-constructed DeBruijnGraph passed by reference.
  * - Contig sequences are produced in overlap mode — boundary nodes contribute
  *   their full k-1 chars to adjacent contigs.
+ * - recorder_ is optional (default nullptr). When null, all recording calls
+ *   are no-ops — zero overhead for normal non-visualization pipeline runs.
  * TODO: Build in handling for starting traversal at "sinks".
  */
 
@@ -26,7 +28,7 @@
 
 class ContigTraversal {
 
-public: // PUBLIC CLASS MEMBERS
+public:
 
     struct Contig {
         std::string sequence;    // Assembled base sequence including k-1 overlap at boundaries.
@@ -40,6 +42,7 @@ private:
     DeBruijnGraph& graph_;                                     // Graph to be traversed.
     OpenAddressingTable<NodeId, std::vector<NodeId>> adjCopy_; // Table of all nodes and neighbor lists.
     std::vector<Contig> contigs_;                              // List of all contigs derived from graph_.
+    Recorder* recorder_;                                       // Optional — null in normal pipeline runs.
 
     /**
      * @brief Initializes adjCopy_, table of ID's with neighbor lists as values.
@@ -48,9 +51,9 @@ private:
     void initializeAdjacency();
 
     /**
-     * @brief Boolean test for node ambiguity
+     * @brief Boolean test for node ambiguity.
      * @param node Node to be tested.
-     * @return bool True if the node has inDegree > 1 or outDegree > 1, false otherwise.
+     * @return True if the node has inDegree > 1 or outDegree > 1.
      */
     [[nodiscard]] bool isAmbiguous(NodeId node) const;
 
@@ -61,57 +64,62 @@ private:
      * of each subsequent node until a unitig boundary or dead end is reached.
      * Detects circular contigs if the walk returns to startNode, trimming the
      * k-2 overlap introduced by the circular join.
+     * If recorder_ is non-null, emits ContigStarted, BaseAppended, and
+     * ContigFinished steps for the animation.
      *
-     * @param startNode The encoded k-1 mer to begin the walk from.
+     * @param startNode   The encoded k-1 mer to begin the walk from.
+     * @param contigIndex Index this contig will occupy in contigs_ — passed
+     *                    to the recorder so steps reference the right contig.
      * @return Contig struct containing the assembled sequence, start/end nodes,
      *         and circularity flag.
      */
-    [[nodiscard]] Contig walkContig(NodeId startNode);
+    [[nodiscard]] Contig walkContig(NodeId startNode, size_t contigIndex);
 
     /**
      * @brief Processes unreached cycles from phase 1 of contig construction.
      *
-     * Stage 2 of contig construction: occurs after the main traversal processes all ambiguous and source nodes.
-     * Isolated cycles refer to any unambiguous with remaining edges that were inaccessible due to no external
-     * entry/exit points. Completes contig walks for each node found.
+     * Stage 2 of contig construction: occurs after the main traversal processes
+     * all ambiguous and source nodes. Isolated cycles refer to any unambiguous
+     * nodes with remaining edges that were inaccessible due to no external
+     * entry/exit points.
      */
     void handleIsolatedCycles();
 
 public:
 
     /**
-     * @brief Constructor for Contig Traversal class.
+     * @brief Constructor for ContigTraversal.
      *
-     * Initializes adjCopy_ to 2 * the number of nodes in the argument graph to avoid extra allocation later.
-     *
-     * @param g Input graph to be traversed.
+     * @param g        Input graph to be traversed.
+     * @param recorder Optional recorder for visualization. Pass nullptr (default)
+     *                 for normal pipeline runs — all recording calls become no-ops.
      */
     explicit ContigTraversal(DeBruijnGraph& g, Recorder* recorder = nullptr);
 
     /**
-    * @brief Constructs all contigs from the graph in two phases.
-    *
-    * Phase 1: walks from all branch points and source nodes, consuming their
-    * outgoing edges and recording each resulting contig.
-    * Phase 2: calls handleIsolatedCycles() to walk any remaining isolated cycles
-    * unreachable from phase 1.
+     * @brief Constructs all contigs from the graph in two phases.
+     *
+     * Phase 1: walks from all branch points and source nodes, consuming their
+     * outgoing edges and recording each resulting contig.
+     * Phase 2: calls handleIsolatedCycles() to walk any remaining isolated cycles
+     * unreachable from phase 1.
      */
     void computeContigs();
 
     /**
      * @brief Returns the list of contigs for graph_.
-     * @return List of contig structs.
+     * @return Const reference to the contig list.
      */
     [[nodiscard]] const std::vector<Contig>& getContigs() const;
 
     /**
-     * @brief Reports the information about the contigs.
+     * @brief Reports contig statistics to stdout.
      *
      * Total contigs:    Number of contiguous fragments derived.
      * Circular contigs: Number of contigs that form a closed loop.
      * Total bases:      Sum of the length of each contig.
-     * N50:              Measure of contiguity, the length at which 50% of total assembled bases are contained in
-     *                   contigs of said length or longer.
+     * N50:              Length at which 50% of total assembled bases are
+     *                   contained in contigs of that length or longer.
      */
     void printStats() const;
 };

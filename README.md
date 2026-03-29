@@ -1,4 +1,4 @@
-# M4OEP-tequigle: Gene Reconstruction and Assembly Toolkit CURRENT
+# M4OEP-tequigle: Gene Reconstruction and Assembly Toolkit
 Author: Tanner Quigley
 ### About
 This project is a C++ implementation of a bioinformatics toolkit to analyze DNA sequences, reconstruct linear and 
