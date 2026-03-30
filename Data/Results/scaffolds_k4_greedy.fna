@@ -1,13 +1,94 @@
->Scaffold_1 contigs=20 strategy=greedy k=4
-GTACTACGACGTCGTAGTACTACGACGTCGTAGTACTACCACCTCCTTCTTGTTGGTGGA
-GGAAGAACAACCACCTCCTT
+>Scaffold_1 contigs=94 strategy=greedy k=4
+TTCGTCGACGATGATCATCGTCGACGATGATCATCGTCGACGATGATCATCGTCGACGAT
+GATCATCGTCGACGATGATCATCGTCGACGATGATCATCGTCGACGATGATCATCGTCGA
+CGAAGAACAACCACCTCCTTCTTGTTGGTGGGGGGTGGTTGTTTTTTGTTGGTGGAGGAA
+GAACAACCACCTCCTTCTTGTTGGTGGAGGAAGAACAACCACCTCCTTCTTGTTGGTGGA
+GGAAGAACAACCACCTCCTTCTTATTAATAATAATTATTTTTTATTAATAATAATTATTA
+TTAATAATAATTATTATTAATAAGAAGGAGGTGGTTGTTATTAATAACAACCACCCCCCG
+CCGGCGGGGGGTGGTT
 >Scaffold_2 contigs=1 strategy=greedy k=4
+TTCG
+>Scaffold_3 contigs=7 strategy=greedy k=4
+AAATAATTATTATTAATAAAAAAGAAGG
+>Scaffold_4 contigs=10 strategy=greedy k=4
+AAACAACCACCCCCCGCCGGCGGGGGGCGGCCGCCTCCTT
+>Scaffold_5 contigs=2 strategy=greedy k=4
+AAACAACC
+>Scaffold_6 contigs=2 strategy=greedy k=4
+AAACAACC
+>Scaffold_7 contigs=6 circular strategy=greedy k=4
+AAAAAAAAAAAA
+>Scaffold_8 contigs=1 strategy=greedy k=4
+AATT
+>Scaffold_9 contigs=20 strategy=greedy k=4
+ACGTCGTAGTACTACGACGTCGTAGTACTACGACGTCGTAGTACTACGACGTCGTAGTAC
+TACGACGTCGTAGTACTACC
+>Scaffold_10 contigs=33 strategy=greedy k=4
+ATATTATGATGCTGCGGCGCCGCAGCATCATGATGCTGCGGCGCCGCAGCATCATGATGC
+TGCGGCGCCGCAGCATCATGATGCTGCAGCATCATAATATTATGATGCTGCAGCATCATA
+ATATTATGATGC
+>Scaffold_11 contigs=28 circular strategy=greedy k=4
+GCTACTAGTAGCAGCTGCTACTAGTAGCAGCTGCTACTAGTAGCAGCTGCTACTAGTAGC
+AGCTGCTACTAGTAGCAGCTGCTACTAGTAGCAGCTGCTACTAGTAGCAGCT
+>Scaffold_12 contigs=8 circular strategy=greedy k=4
+CTGATGACGACTACTGCTGATGACGACTACTG
+>Scaffold_13 contigs=10 strategy=greedy k=4
+GGCCGCCGCCGGCGGCGGCCGCCCCCCGCCGGCGGCGGCC
+>Scaffold_14 contigs=1 strategy=greedy k=4
+AAGG
+>Scaffold_15 contigs=1 strategy=greedy k=4
+CGCA
+>Scaffold_16 contigs=4 circular strategy=greedy k=4
+TCAGAAGATGATCATCA
+>Scaffold_17 contigs=1 strategy=greedy k=4
+TTAA
+>Scaffold_18 contigs=1 strategy=greedy k=4
+TTAA
+>Scaffold_19 contigs=1 strategy=greedy k=4
+CCGG
+>Scaffold_20 contigs=1 strategy=greedy k=4
+CCGG
+>Scaffold_21 contigs=2 strategy=greedy k=4
+ACATCATA
+>Scaffold_22 contigs=1 strategy=greedy k=4
+CCTT
+>Scaffold_23 contigs=1 strategy=greedy k=4
+ATCA
+>Scaffold_24 contigs=3 strategy=greedy k=4
+TAGAAGACGACA
+>Scaffold_25 contigs=1 strategy=greedy k=4
+TAGA
+>Scaffold_26 contigs=4 strategy=greedy k=4
+TATGATGATGACGACA
+>Scaffold_27 contigs=2 strategy=greedy k=4
+ACTACTAG
+>Scaffold_28 contigs=1 strategy=greedy k=4
 GTAC
->Scaffold_3 contigs=3 strategy=greedy k=4
-GGAAGAACAACC
->Scaffold_4 contigs=2 strategy=greedy k=4
-ACGTCGTA
->Scaffold_5 contigs=1 strategy=greedy k=4
-CGTA
->Scaffold_6 contigs=1 strategy=greedy k=4
+>Scaffold_29 contigs=1 strategy=greedy k=4
+AACC
+>Scaffold_30 contigs=1 strategy=greedy k=4
+TGAC
+>Scaffold_31 contigs=1 strategy=greedy k=4
+CTAG
+>Scaffold_32 contigs=1 strategy=greedy k=4
 TTGG
+>Scaffold_33 contigs=1 strategy=greedy k=4
+GAAA
+>Scaffold_34 contigs=3 strategy=greedy k=4
+GGGGGAGGAA
+>Scaffold_35 contigs=3 strategy=greedy k=4
+GGGGGAGGAA
+>Scaffold_36 contigs=3 strategy=greedy k=4
+GGGGGAGGAA
+>Scaffold_37 contigs=4 circular strategy=greedy k=4
+GGGGGGGG
+>Scaffold_38 contigs=1 strategy=greedy k=4
+GGAA
+>Scaffold_39 contigs=1 strategy=greedy k=4
+CCCG
+>Scaffold_40 contigs=6 circular strategy=greedy k=4
+CCCCCCCCCCCC
+>Scaffold_41 contigs=2 strategy=greedy k=4
+TTTTTA
+>Scaffold_42 contigs=4 circular strategy=greedy k=4
+TTTTTTTT

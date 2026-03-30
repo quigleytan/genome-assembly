@@ -81,6 +81,7 @@ add_executable(ScaffoldAssembly
         ScaffoldConstruction/DeBruijnGraph.cpp
         ScaffoldConstruction/ContigTraversal.cpp
         ScaffoldConstruction/ContigScaffolder.cpp
+        Visualization/DataExporter.cpp
 )
 target_include_directories(ScaffoldAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 

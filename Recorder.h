@@ -41,10 +41,7 @@ public:
      */
     [[nodiscard]] bool isActive() const { return session_ != nullptr; }
 
-    // ─────────────────────────────────────────────
-    // CONTIG ANIMATION EVENTS
-    // Called by ContigTraversal during walkContig()
-    // ─────────────────────────────────────────────
+// CONTIG ANIMATION EVENTS
 
     /**
      * @brief Records that a new contig walk has begun from startNode.

@@ -150,7 +150,7 @@ void DataExporter::writeContigSteps(std::ostream& out, const VisSession& session
 
         } else if (step.type == TraversalStep::Type::ContigStarted) {
             // sequence field holds the startLabel (see Recorder.h)
-            out << "STARTED " << step.contigIndex << ' ' << step.from
+            out << "STARTED " << step.contigIndex << ' ' << encodeNodeId(step.from)
                 << ' ' << step.sequence << '\n';
             ++i;
 
