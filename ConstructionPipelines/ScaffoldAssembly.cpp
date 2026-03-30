@@ -233,7 +233,7 @@ int main() {
 
         // Phase 2
 
-        const size_t primaryK = 7;
+        const size_t primaryK = 6;
         const std::string primaryStrategy = "scored";
 
         std::cout << "======================================\n";
