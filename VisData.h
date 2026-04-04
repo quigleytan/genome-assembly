@@ -6,10 +6,10 @@
  *   and KmerTypes.h, so both sides can include this without issues.
  * - NodeId raw values are stored for identity comparisons, but all
  *   human-readable labels are pre-decoded strings, so the Visualizer does
- *   not need to include KmerEncoding.
+ *   not need to include kmer_encoding.
  * Important notes:
- * - VisSession is the top-level container passed to DataExporter/DataLoader.
- * - contigSteps drives the contig assembly animation in ContigView.
+ * - VisSession is the top-level container passed to data_exporter/data_loader.
+ * - contigSteps drives the contig assembly animation in contig_view.
  */
 
 #ifndef VIS_DATA_H

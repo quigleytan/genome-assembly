@@ -2,12 +2,12 @@
 #include <ostream>
 #include <vector>
 
-#include "DeBruijnGraph.h"
-#include "DataInitialization/DNASequence.h"
-#include "DataProcessing/KmerEncoding.h"
-#include "DataProcessing/KmerTable.h"
-#include "EulerianTraversal.h"
-#include "ContigTraversal.h"
+#include "de_bruijn_graph.h"
+#include "data_initalization/dna_sequence.h"
+#include "encoding/kmer_encoding.h"
+#include "encoding/kmer_table.h"
+#include "eulerian_traversal.h"
+#include "contig_traversal.h"
 
 bool DebruijnGraphTests();
 bool EulerianPathTests();
@@ -39,7 +39,7 @@ static bool isRotation(const std::string& original, const std::string& assembled
     return false;
 }
 
-// Shared pipeline: encodes a sequence into a KmerTable, builds a DeBruijnGraph,
+// Shared pipeline: encodes a sequence into a kmer_table, builds a DeBruijnGraph,
 // and returns it ready for EulerianPath.
 static DeBruijnGraph buildGraph(const std::string& sequence, int k) {
     KmerTable kTable(sequence.length(), k);
@@ -75,7 +75,7 @@ bool DebruijnGraphTests() {
     DNASequence genome("Test Sequence", "AGTGCGTCAGT");
     int k = 3;
 
-    // Entering information into the KmerTable
+    // Entering information into the kmer_table
     KmerTable kTable(genome.getLength(), k);
     KmerEncoding::encodeSequence(genome.getSequence(), k, kTable);
 

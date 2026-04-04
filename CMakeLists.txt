@@ -66,103 +66,103 @@ set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
 # ASSEMBLY EXECUTABLES
 
 add_executable(FullReconstruction
-        GapResolution/GapEstimation.cpp
-        GapResolution/GapFilling.cpp
+        gap_resolution/gap_estimation.cpp
+        gap_resolution/gap_filling.cpp
 )
 
 set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
 
 add_executable(ScaffoldAssembly
-        ConstructionPipelines/ScaffoldAssembly.cpp
+        pipelines/ScaffoldAssembly.cpp
         DataList.cpp
-        DataInitialization/DNASequence.cpp
-        DataInitialization/SequenceReader.cpp
-        DataProcessing/KmerEncoding.cpp
-        ScaffoldConstruction/DeBruijnGraph.cpp
-        ScaffoldConstruction/ContigTraversal.cpp
-        ScaffoldConstruction/ContigScaffolder.cpp
-        Visualization/DataExporter.cpp
+        data_initalization/dna_sequence.cpp
+        data_initalization/sequence_reader.cpp
+        encoding/kmer_encoding.cpp
+        ScaffoldConstruction/de_bruijn_graph.cpp
+        ScaffoldConstruction/contig_traversal.cpp
+        ScaffoldConstruction/scaffolder.cpp
+        graphics/data_exporter.cpp
 )
 target_include_directories(ScaffoldAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(FastaEulerianAssembly
-        ConstructionPipelines/FastaEulerianAssembly.cpp
+        pipelines/FastaEulerianAssembly.cpp
         DataList.cpp
-        DataInitialization/DNASequence.cpp
-        DataInitialization/SequenceReader.cpp
-        DataProcessing/KmerEncoding.cpp
-        ScaffoldConstruction/DeBruijnGraph.cpp
-        ScaffoldConstruction/EulerianTraversal.cpp
+        data_initalization/dna_sequence.cpp
+        data_initalization/sequence_reader.cpp
+        encoding/kmer_encoding.cpp
+        ScaffoldConstruction/de_bruijn_graph.cpp
+        ScaffoldConstruction/eulerian_traversal.cpp
 )
 target_include_directories(FastaEulerianAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(FastaContigAssembly
-        ConstructionPipelines/FastaContigAssembly.cpp
+        pipelines/FastaContigAssembly.cpp
         DataList.cpp
-        DataInitialization/DNASequence.cpp
-        DataInitialization/SequenceReader.cpp
-        DataProcessing/KmerEncoding.cpp
-        ScaffoldConstruction/DeBruijnGraph.cpp
-        ScaffoldConstruction/ContigTraversal.cpp
-        ScaffoldConstruction/ContigScaffolder.cpp
+        data_initalization/dna_sequence.cpp
+        data_initalization/sequence_reader.cpp
+        encoding/kmer_encoding.cpp
+        ScaffoldConstruction/de_bruijn_graph.cpp
+        ScaffoldConstruction/contig_traversal.cpp
+        ScaffoldConstruction/scaffolder.cpp
 )
 target_include_directories(FastaContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(FastqContigAssembly
-        ConstructionPipelines/FastqContigAssembly.cpp
+        pipelines/FastqContigAssembly.cpp
         DataList.cpp
-        DataInitialization/DNASequence.cpp
-        DataInitialization/SequenceReader.cpp
-        DataProcessing/KmerEncoding.cpp
-        ScaffoldConstruction/DeBruijnGraph.cpp
-        ScaffoldConstruction/ContigTraversal.cpp
+        data_initalization/dna_sequence.cpp
+        data_initalization/sequence_reader.cpp
+        encoding/kmer_encoding.cpp
+        ScaffoldConstruction/de_bruijn_graph.cpp
+        ScaffoldConstruction/contig_traversal.cpp
 )
 target_include_directories(FastqContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 # TEST EXECUTABLES
 
 add_executable(InitializationTests
-        DataInitialization/InitializationTests.cpp
-        DataInitialization/DNASequence.cpp
-        DataInitialization/SequenceReader.cpp
-        DataProcessing/KmerEncoding.cpp
+        data_initalization/InitializationTests.cpp
+        data_initalization/dna_sequence.cpp
+        data_initalization/sequence_reader.cpp
+        encoding/kmer_encoding.cpp
 )
 target_include_directories(InitializationTests PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(ProcessingTests
-        DataProcessing/ProcessingTests.cpp
-        DataProcessing/KmerEncoding.cpp
-        DataInitialization/DNASequence.cpp
+        encoding/ProcessingTests.cpp
+        encoding/kmer_encoding.cpp
+        data_initalization/dna_sequence.cpp
 )
 target_include_directories(ProcessingTests PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(ConstructionTests
         DataList.cpp
         ScaffoldConstruction/ConstructionTests.cpp
-        ScaffoldConstruction/DeBruijnGraph.cpp
-        ScaffoldConstruction/EulerianTraversal.cpp
-        ScaffoldConstruction/ContigTraversal.cpp
-        ScaffoldConstruction/ContigScaffolder.cpp
-        DataProcessing/KmerEncoding.cpp
-        DataInitialization/DNASequence.cpp
+        ScaffoldConstruction/de_bruijn_graph.cpp
+        ScaffoldConstruction/eulerian_traversal.cpp
+        ScaffoldConstruction/contig_traversal.cpp
+        ScaffoldConstruction/scaffolder.cpp
+        encoding/kmer_encoding.cpp
+        data_initalization/dna_sequence.cpp
 )
 target_include_directories(ConstructionTests PRIVATE ${PROJECT_INCLUDE_DIR})
 
 # VISUALIZER EXECUTABLE
 
 add_executable(Visualizer
-        Visualization/VisualizerMain.cpp
-        Visualization/ContigView.cpp
-        Visualization/GraphView.cpp
-        Visualization/DataExporter.cpp
-        Visualization/DataLoader.cpp
-        DataInitialization/DNASequence.cpp
-        DataInitialization/SequenceReader.cpp
-        DataProcessing/KmerEncoding.cpp
-        ScaffoldConstruction/DeBruijnGraph.cpp
-        ScaffoldConstruction/EulerianTraversal.cpp
-        ScaffoldConstruction/ContigTraversal.cpp
-        ScaffoldConstruction/ContigScaffolder.cpp
+        graphics/gui.cpp
+        graphics/contig_view.cpp
+        graphics/GraphView.cpp
+        graphics/data_exporter.cpp
+        graphics/data_loader.cpp
+        data_initalization/dna_sequence.cpp
+        data_initalization/sequence_reader.cpp
+        encoding/kmer_encoding.cpp
+        ScaffoldConstruction/de_bruijn_graph.cpp
+        ScaffoldConstruction/eulerian_traversal.cpp
+        ScaffoldConstruction/contig_traversal.cpp
+        ScaffoldConstruction/scaffolder.cpp
 )
 
 target_include_directories(Visualizer PRIVATE
