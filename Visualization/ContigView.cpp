@@ -8,13 +8,13 @@
 #include <cmath>
 #include <string>
 
-
 // STATIC MEMBER DEFINITIONS
 
 constexpr float       ContigView::SPEED_PRESETS[];
 constexpr const char* ContigView::SPEED_LABELS[];
 
 // CONSTRUCTION
+
 
 ContigView::ContigView(const VisSession& session)
     : session_(session) {
@@ -35,7 +35,6 @@ void ContigView::buildDisplayData() {
     for (size_t i = 0; i < n; ++i) {
         const VisContig& c = session_.contigs[i];
         displayStates_[i].color = assignColor(c.scaffoldIndex, c.isCircular);
-        // visible and fillFraction start at 0 — animation reveals them
     }
 
     // Build scaffold rows sorted by length descending
@@ -46,9 +45,9 @@ void ContigView::buildDisplayData() {
         const VisScaffold& vs = session_.scaffolds[si];
 
         ScaffoldRow row;
-        row.scaffoldIndex  = si;
-        row.isCircular     = vs.isCircular;
-        row.sortedContigIndices = vs.contigIndices; // copy, then sort
+        row.scaffoldIndex       = si;
+        row.isCircular          = vs.isCircular;
+        row.sortedContigIndices = vs.contigIndices;
 
         std::sort(row.sortedContigIndices.begin(),
                   row.sortedContigIndices.end(),
@@ -60,7 +59,7 @@ void ContigView::buildDisplayData() {
         scaffoldRows_.push_back(std::move(row));
     }
 
-    // Collect unscaffolded contigs
+    // Collect unscaffolded contigs sorted longest-first
     unscaffoldedContigs_.clear();
     for (size_t i = 0; i < n; ++i) {
         if (session_.contigs[i].scaffoldIndex < 0)
@@ -72,20 +71,66 @@ void ContigView::buildDisplayData() {
                          session_.contigs[b].sequence.length();
               });
 
-    // ── If no animation steps, make everything visible immediately ────────
+    // If no animation steps, make everything visible immediately
     if (session_.contigSteps.empty()) {
         for (auto& ds : displayStates_) {
             ds.visible      = true;
             ds.fillFraction = 1.0f;
         }
     }
+
+    // Build genome map segment list
+    buildGenomeSegments();
+}
+
+// GENOME MAP — SEGMENT BUILDER
+// Walks genomeSequence and records each run of
+// non-N chars (scaffold) and N chars (gap) as
+// a GenomeSegment with its scaffold index.
+
+void ContigView::buildGenomeSegments() {
+    genomeSegments_.clear();
+
+    const std::string& genome = session_.genomeSequence;
+    if (genome.empty()) return;
+
+    size_t scaffoldCount = 0;
+    size_t i = 0;
+
+    while (i < genome.size()) {
+        if (genome[i] == 'N') {
+            // Gap — consume run of Ns
+            size_t start = i;
+            while (i < genome.size() && genome[i] == 'N')
+                ++i;
+
+            GenomeSegment seg;
+            seg.type     = GenomeSegment::Type::Gap;
+            seg.index    = 0;
+            seg.startPos = start;
+            seg.length   = i - start;
+            genomeSegments_.push_back(seg);
+
+        } else {
+            // Scaffold — consume run of non-N chars
+            size_t start = i;
+            while (i < genome.size() && genome[i] != 'N')
+                ++i;
+
+            GenomeSegment seg;
+            seg.type     = GenomeSegment::Type::Scaffold;
+            seg.index    = scaffoldCount;
+            seg.startPos = start;
+            seg.length   = i - start;
+            genomeSegments_.push_back(seg);
+            ++scaffoldCount;
+        }
+    }
 }
 
 // COLOR HELPERS
 
-
 uint32_t ContigView::hsvToImCol32(float h, float s, float v, float a) {
-    // Standard HSV → RGB conversion
     float r, g, b;
     if (s <= 0.0f) {
         r = g = b = v;
@@ -114,13 +159,19 @@ uint32_t ContigView::hsvToImCol32(float h, float s, float v, float a) {
 
 uint32_t ContigView::assignColor(int scaffoldIndex, bool isCircular) const {
     if (scaffoldIndex < 0)
-        return IM_COL32(130, 130, 130, 255); // unscaffolded — gray
+        return IM_COL32(130, 130, 130, 255);
 
-    // Golden ratio spacing gives visually distinct hues across scaffold indices
     float hue = fmod(static_cast<float>(scaffoldIndex) * 0.618033988f, 1.0f);
     float sat = isCircular ? 0.40f : 0.80f;
     float val = 0.88f;
     return hsvToImCol32(hue, sat, val);
+}
+
+uint32_t ContigView::scaffoldColor(size_t scaffoldIndex) const {
+    if (scaffoldIndex >= session_.scaffolds.size())
+        return IM_COL32(130, 130, 130, 255);
+    bool isCircular = session_.scaffolds[scaffoldIndex].isCircular;
+    return assignColor(static_cast<int>(scaffoldIndex), isCircular);
 }
 
 // BAR WIDTH
@@ -132,7 +183,6 @@ float ContigView::barWidth(size_t contigIndex) const {
 }
 
 // ANIMATION
-
 
 void ContigView::applyStep(const TraversalStep& step) {
     const size_t idx = step.contigIndex;
@@ -163,7 +213,7 @@ void ContigView::applyStep(const TraversalStep& step) {
             break;
 
         default:
-            break; // EdgeConsumed / NodeCommitted not used in ContigView
+            break;
     }
 }
 
@@ -176,7 +226,6 @@ void ContigView::resetAnimation() {
         ds.fillFraction  = 0.0f;
         ds.basesAppended = 0;
     }
-    // If no steps, show everything immediately
     if (session_.contigSteps.empty()) {
         for (auto& ds : displayStates_) {
             ds.visible      = true;
@@ -186,7 +235,6 @@ void ContigView::resetAnimation() {
 }
 
 void ContigView::seekToStep(size_t targetStep) {
-    // Full replay from scratch — only called on scrub, not every frame
     resetAnimation();
     targetStep = std::min(targetStep, session_.contigSteps.size());
     for (size_t i = 0; i < targetStep; ++i)
@@ -214,41 +262,231 @@ void ContigView::update(float deltaTime) {
         playing_ = false;
 }
 
-// RENDERING / SUB-RENDERERS
+// GENOME MAP TAB
+
+void ContigView::renderGenomeMapTab() {
+    if (session_.genomeSequence.empty()) {
+        ImGui::TextDisabled("No genome sequence available.");
+        ImGui::TextDisabled("Run the assembly pipeline with visualization enabled.");
+        return;
+    }
+
+    const float totalWidth  = ImGui::GetContentRegionAvail().x;
+    const float availHeight = ImGui::GetContentRegionAvail().y;
+    const float detailWidth = totalWidth * DETAIL_WIDTH_FRACTION;
+    const float seqWidth    = totalWidth - detailWidth - ImGui::GetStyle().ItemSpacing.x;
+
+    // ── Left: wrapping sequence view ──────────────────────────────────────
+    ImGui::BeginChild("##genomemap",
+                      ImVec2(seqWidth, availHeight),
+                      false,
+                      ImGuiWindowFlags_HorizontalScrollbar);
+
+    ImDrawList* drawList    = ImGui::GetWindowDrawList();
+    const std::string& genome = session_.genomeSequence;
+
+    // Bases per row based on available width and cell size
+    const int basesPerRow = std::max(1, static_cast<int>(
+        (seqWidth - 16.0f) / CELL_WIDTH));
+    const float rowHeight = CELL_HEIGHT + 2.0f;
+
+    const size_t totalBases = genome.size();
+    const size_t totalRows  = (totalBases + basesPerRow - 1) / basesPerRow;
+
+    // Reserve vertical space for scrolling
+    ImGui::Dummy(ImVec2(seqWidth - 16.0f,
+                        static_cast<float>(totalRows) * rowHeight + 8.0f));
+
+    ImVec2 origin = ImGui::GetItemRectMin();
+    origin.x += 8.0f;
+    origin.y += 4.0f;
+
+    size_t segIdx = 0;
+
+    for (size_t row = 0; row < totalRows; ++row) {
+        size_t rowStart = row * static_cast<size_t>(basesPerRow);
+        size_t rowEnd   = std::min(rowStart + static_cast<size_t>(basesPerRow), totalBases);
+
+        for (size_t pos = rowStart; pos < rowEnd; ++pos) {
+
+            // Advance to the segment that contains this position
+            while (segIdx + 1 < genomeSegments_.size() &&
+                   pos >= genomeSegments_[segIdx].startPos + genomeSegments_[segIdx].length)
+                ++segIdx;
+
+            const GenomeSegment& seg = genomeSegments_[segIdx];
+
+            float cellX = origin.x + static_cast<float>(pos - rowStart) * CELL_WIDTH;
+            float cellY = origin.y + static_cast<float>(row) * rowHeight;
+            ImVec2 cellMin = { cellX,              cellY            };
+            ImVec2 cellMax = { cellX + CELL_WIDTH, cellY + CELL_HEIGHT };
+
+            // Choose color
+            uint32_t color;
+            if (seg.type == GenomeSegment::Type::Gap) {
+                color = IM_COL32(80, 80, 80, 255); // dark gray for N gaps
+            } else {
+                color = scaffoldColor(seg.index);
+                // Dim segments whose scaffold hasn't appeared in animation yet
+                if (seg.index < session_.scaffolds.size()) {
+                    const VisScaffold& vs = session_.scaffolds[seg.index];
+                    bool anyVisible = false;
+                    for (size_t ci : vs.contigIndices) {
+                        if (ci < displayStates_.size() && displayStates_[ci].visible) {
+                            anyVisible = true;
+                            break;
+                        }
+                    }
+                    if (!anyVisible)
+                        color = IM_COL32(40, 40, 40, 255);
+                }
+            }
+
+            drawList->AddRectFilled(cellMin, cellMax, color);
+
+            // Subtle grid lines between cells
+            drawList->AddRect(cellMin, cellMax,
+                              IM_COL32(20, 20, 20, 60), 0.0f, 0, 0.5f);
+
+            // Selection highlight
+            if (static_cast<int>(segIdx) == selectedSegment_) {
+                drawList->AddRect(cellMin, cellMax,
+                                  IM_COL32(255, 255, 255, 200), 0.0f, 0, 1.5f);
+            }
+        }
+    }
+
+    // ── Click detection — one invisible button per segment ────────────────
+    // We place a button covering the first row of each segment.
+    // This is sufficient for click intent without complex multi-row regions.
+    for (size_t si = 0; si < genomeSegments_.size(); ++si) {
+        const GenomeSegment& seg = genomeSegments_[si];
+
+        size_t pos  = seg.startPos;
+        size_t row  = pos / static_cast<size_t>(basesPerRow);
+        size_t col  = pos % static_cast<size_t>(basesPerRow);
+
+        float cellX = origin.x + static_cast<float>(col) * CELL_WIDTH;
+        float cellY = origin.y + static_cast<float>(row) * rowHeight;
+
+        // Width covers this segment's extent on its first row only
+        size_t firstRowEnd = std::min(
+            seg.startPos + seg.length,
+            (row + 1) * static_cast<size_t>(basesPerRow));
+        float buttonW = static_cast<float>(firstRowEnd - pos) * CELL_WIDTH;
+
+        ImGui::SetCursorScreenPos({ cellX, cellY });
+        ImGui::InvisibleButton(
+            ("##seg" + std::to_string(si)).c_str(),
+            ImVec2(buttonW, CELL_HEIGHT));
+
+        if (ImGui::IsItemClicked()) {
+            selectedSegment_ = static_cast<int>(si);
+            selectedContig_  = -1; // clear animation tab selection
+        }
+
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            if (seg.type == GenomeSegment::Type::Gap) {
+                ImGui::Text("Gap");
+                ImGui::Text("Length:   %zu Ns", seg.length);
+                ImGui::Text("Position: %zu", seg.startPos);
+            } else {
+                ImGui::Text("Scaffold %zu", seg.index);
+                if (seg.index < session_.scaffolds.size())
+                    ImGui::Text("Contigs:  %zu",
+                        session_.scaffolds[seg.index].contigIndices.size());
+                ImGui::Text("Length:   %zu bases", seg.length);
+                ImGui::Text("Position: %zu", seg.startPos);
+            }
+            ImGui::EndTooltip();
+        }
+    }
+
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+
+    // ── Right: detail panel ───────────────────────────────────────────────
+    ImGui::BeginChild("##mapdetail", ImVec2(detailWidth, availHeight), true);
+
+    if (selectedSegment_ < 0 ||
+        selectedSegment_ >= static_cast<int>(genomeSegments_.size())) {
+        ImGui::TextDisabled("Click a segment\nto see details.");
+        ImGui::EndChild();
+        return;
+    }
+
+    const GenomeSegment& seg = genomeSegments_[selectedSegment_];
+
+    if (seg.type == GenomeSegment::Type::Gap) {
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Gap Region");
+        ImGui::Separator();
+        ImGui::Text("Length:   %zu Ns", seg.length);
+        ImGui::Text("Position: %zu", seg.startPos);
+        ImGui::Spacing();
+        ImGui::TextDisabled("Gap status: unknown");
+        ImGui::TextDisabled("(gap filling not yet run)");
+
+    } else {
+        ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.4f, 1.0f),
+                           "Scaffold %zu", seg.index);
+        ImGui::Separator();
+        ImGui::Text("Length:   %zu bases", seg.length);
+        ImGui::Text("Position: %zu", seg.startPos);
+
+        if (seg.index < session_.scaffolds.size()) {
+            const VisScaffold& vs = session_.scaffolds[seg.index];
+            ImGui::Text("Circular: %s", vs.isCircular ? "yes" : "no");
+            ImGui::Spacing();
+            ImGui::TextDisabled("Contigs:");
+
+            for (size_t i = 0; i < vs.contigIndices.size(); ++i) {
+                size_t ci = vs.contigIndices[i];
+                if (ci >= session_.contigs.size()) continue;
+                const VisContig& c = session_.contigs[ci];
+
+                ImGui::Spacing();
+                ImGui::Text("  Contig %zu", ci);
+                ImGui::Text("    Length: %zu bases", c.sequence.length());
+                ImGui::Text("    Score:  %.4f", c.score);
+
+                if (i < vs.gaps.size() && vs.gaps[i] == -1)
+                    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                                       "    [gap follows]");
+            }
+        }
+    }
+
+    ImGui::EndChild();
+}
+
+//SUB-RENDERERS (unchanged)
 
 void ContigView::renderContigBar(ImDrawList* drawList, ImVec2 origin, size_t contigIdx) {
     const ContigDisplayState& ds = displayStates_[contigIdx];
     if (!ds.visible) return;
 
-    const float fullW  = barWidth(contigIdx);
+    const float fullW   = barWidth(contigIdx);
     const float filledW = fullW * ds.fillFraction;
 
-    // Background track (unfilled portion)
-    uint32_t bgColor = IM_COL32(50, 50, 50, 180);
     drawList->AddRectFilled(
         origin,
         ImVec2(origin.x + fullW, origin.y + BAR_HEIGHT),
-        bgColor,
-        3.0f); // corner rounding
+        IM_COL32(50, 50, 50, 180), 3.0f);
 
-    // Filled portion
     if (filledW > 0.0f) {
         drawList->AddRectFilled(
             origin,
             ImVec2(origin.x + filledW, origin.y + BAR_HEIGHT),
-            ds.color,
-            3.0f);
+            ds.color, 3.0f);
     }
 
-    // Selection highlight — outline when selected
     if (static_cast<int>(contigIdx) == selectedContig_) {
         drawList->AddRect(
             ImVec2(origin.x - 1, origin.y - 1),
             ImVec2(origin.x + fullW + 1, origin.y + BAR_HEIGHT + 1),
-            IM_COL32(255, 255, 255, 220),
-            3.0f,
-            0,
-            2.0f); // line thickness
+            IM_COL32(255, 255, 255, 220), 3.0f, 0, 2.0f);
     }
 
     ImGui::SetCursorScreenPos(origin);
@@ -256,8 +494,10 @@ void ContigView::renderContigBar(ImDrawList* drawList, ImVec2 origin, size_t con
         ("##contig" + std::to_string(contigIdx)).c_str(),
         ImVec2(fullW, BAR_HEIGHT));
 
-    if (ImGui::IsItemClicked())
-        selectedContig_ = static_cast<int>(contigIdx);
+    if (ImGui::IsItemClicked()) {
+        selectedContig_  = static_cast<int>(contigIdx);
+        selectedSegment_ = -1; // clear genome map selection
+    }
 
     if (ImGui::IsItemHovered()) {
         ImGui::BeginTooltip();
@@ -276,7 +516,7 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
 
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 cursor        = ImGui::GetCursorScreenPos();
-    float  x0            = cursor.x + 8.0f; // left margin
+    float  x0            = cursor.x + 8.0f;
 
     auto advanceCursor = [&](float height) {
         ImGui::Dummy(ImVec2(BAR_MAX_WIDTH + 16.0f, height));
@@ -284,11 +524,9 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
         cursor.x = x0;
     };
 
-    // SCAFFOLDED CONTIGS
     for (const ScaffoldRow& row : scaffoldRows_) {
         const VisScaffold& vs = session_.scaffolds[row.scaffoldIndex];
 
-        // Scaffold label
         ImGui::SetCursorScreenPos(cursor);
         ImGui::TextColored(
             ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
@@ -298,19 +536,14 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
             row.isCircular ? ", circular" : "");
         advanceCursor(ImGui::GetTextLineHeight() + 4.0f);
 
-        // Bars within this scaffold
         for (size_t ci : row.sortedContigIndices) {
             ImVec2 barOrigin = { x0, cursor.y };
             renderContigBar(drawList, barOrigin, ci);
             advanceCursor(BAR_HEIGHT + BAR_SPACING);
 
-            // Gap indicator after this contig if applicable
-            // Find gap value from scaffold entries
             for (size_t ei = 0; ei < vs.contigIndices.size(); ++ei) {
                 if (vs.contigIndices[ei] == ci && ei + 1 < vs.gaps.size()) {
-                    int gap = vs.gaps[ei];
-                    if (gap == -1) {
-                        // Unknown gap — draw a small hatched gray block
+                    if (vs.gaps[ei] == -1) {
                         drawList->AddRectFilled(
                             { x0, cursor.y },
                             { x0 + GAP_BAR_WIDTH, cursor.y + BAR_HEIGHT * 0.5f },
@@ -321,12 +554,9 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
                 }
             }
         }
-
-        // Extra spacing between scaffold groups
         advanceCursor(SCAFFOLD_GAP);
     }
 
-    // Unscaffolded contigs
     if (!unscaffoldedContigs_.empty()) {
         ImGui::SetCursorScreenPos(cursor);
         ImGui::TextColored(
@@ -346,9 +576,7 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
 }
 
 void ContigView::renderDetailPanel(float panelWidth, float availHeight) {
-    ImGui::BeginChild("##detail",
-                      ImVec2(panelWidth, availHeight),
-                      true); // show border
+    ImGui::BeginChild("##detail", ImVec2(panelWidth, availHeight), true);
 
     if (selectedContig_ < 0 ||
         selectedContig_ >= static_cast<int>(session_.contigs.size())) {
@@ -390,10 +618,8 @@ void ContigView::renderDetailPanel(float panelWidth, float availHeight) {
     }
 
     ImGui::Spacing();
-    // Copy full sequence to clipboard
-    if (ImGui::Button("Copy sequence")) {
+    if (ImGui::Button("Copy sequence"))
         ImGui::SetClipboardText(c.sequence.c_str());
-    }
 
     ImGui::EndChild();
 }
@@ -403,23 +629,19 @@ void ContigView::renderTimeline() {
 
     const size_t totalSteps = session_.contigSteps.size();
 
-    // Play / Pause
     if (ImGui::Button(playing_ ? "  Pause  " : "  Play   ")) {
         if (currentStep_ >= totalSteps)
-            resetAnimation(); // restart from beginning if at end
+            resetAnimation();
         playing_ = !playing_;
     }
 
     ImGui::SameLine();
 
-    // Restart
-    if (ImGui::Button("Restart")) {
+    if (ImGui::Button("Restart"))
         resetAnimation();
-    }
 
     ImGui::SameLine();
 
-    // Step counter
     ImGui::Text("Step %zu / %zu", currentStep_, totalSteps);
 
     if (totalSteps == 0) {
@@ -428,27 +650,23 @@ void ContigView::renderTimeline() {
         return;
     }
 
-    // ── Scrub slider ──────────────────────────────────────────────────────
     int sliderStep = static_cast<int>(currentStep_);
     int sliderMax  = static_cast<int>(totalSteps);
 
-    ImGui::SetNextItemWidth(-180.0f); // leave room for speed buttons on right
+    ImGui::SetNextItemWidth(-180.0f);
     if (ImGui::SliderInt("##scrub", &sliderStep, 0, sliderMax)) {
-        playing_ = false; // stop playback when user scrubs
+        playing_ = false;
         seekToStep(static_cast<size_t>(sliderStep));
     }
 
     ImGui::SameLine();
 
-    // ── Speed presets ─────────────────────────────────────────────────────
     ImGui::TextDisabled("Speed:");
     for (int i = 0; i < NUM_PRESETS; ++i) {
         ImGui::SameLine();
         bool isSelected = (i == speedPresetIndex_);
-        if (isSelected) {
-            ImGui::PushStyleColor(ImGuiCol_Button,
-                                  ImVec4(0.3f, 0.6f, 0.9f, 1.0f));
-        }
+        if (isSelected)
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 0.9f, 1.0f));
         if (ImGui::SmallButton(SPEED_LABELS[i]))
             speedPresetIndex_ = i;
         if (isSelected)
@@ -459,7 +677,6 @@ void ContigView::renderTimeline() {
 // RENDER — TOP LEVEL
 
 void ContigView::render() {
-    // Full-window ImGui window — no title bar, no padding, fills the OS window
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(io.DisplaySize);
@@ -471,22 +688,34 @@ void ContigView::render() {
                  ImGuiWindowFlags_NoScrollbar |
                  ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-    // Reserve space at the bottom for the timeline bar
+    // Reserve space at the bottom for the timeline
     const float timelineHeight = ImGui::GetTextLineHeightWithSpacing() * 2.5f;
-    const float availHeight    = ImGui::GetContentRegionAvail().y - timelineHeight;
-    const float totalWidth     = ImGui::GetContentRegionAvail().x;
-    const float detailWidth    = totalWidth * DETAIL_WIDTH_FRACTION;
-    const float barPanelWidth  = totalWidth - detailWidth - ImGui::GetStyle().ItemSpacing.x;
+    const float tabBarHeight   = ImGui::GetTextLineHeightWithSpacing() + 8.0f;
+    const float availHeight    = ImGui::GetContentRegionAvail().y
+                                 - timelineHeight - tabBarHeight;
 
-    // Left: bar view
-    renderBarPanel(barPanelWidth, availHeight);
+    if (ImGui::BeginTabBar("##viewtabs")) {
 
-    ImGui::SameLine();
+        if (ImGui::BeginTabItem("Assembly Animation")) {
+            const float totalWidth    = ImGui::GetContentRegionAvail().x;
+            const float detailWidth   = totalWidth * DETAIL_WIDTH_FRACTION;
+            const float barPanelWidth = totalWidth - detailWidth
+                                        - ImGui::GetStyle().ItemSpacing.x;
+            renderBarPanel(barPanelWidth, availHeight);
+            ImGui::SameLine();
+            renderDetailPanel(detailWidth, availHeight);
+            ImGui::EndTabItem();
+        }
 
-    // Right: detail panel
-    renderDetailPanel(detailWidth, availHeight);
+        if (ImGui::BeginTabItem("Genome Map")) {
+            renderGenomeMapTab();
+            ImGui::EndTabItem();
+        }
 
-    // Bottom: timeline
+        ImGui::EndTabBar();
+    }
+
+    // Timeline always visible regardless of active tab
     renderTimeline();
 
     ImGui::End();

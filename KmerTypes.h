@@ -1,6 +1,5 @@
 /*
-* KmerTypes.h
- * Created by Tanner Quigley on 3/20/2026
+ * KmerTypes.h
  * Summary:
  * - Shared type definitions for kmer and node encoding.
  * - NodeId is the encoded representation of a k-1 mer used as a graph node key.

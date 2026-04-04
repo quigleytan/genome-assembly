@@ -137,6 +137,8 @@ private:
      */
     uint32_t assignColor(int scaffoldIndex, bool isCircular) const;
 
+    uint32_t scaffoldColor(size_t scaffoldIndex) const;
+
     /**
      * @brief Converts HSV to an IM_COL32 RGBA value.
      * h in [0,1], s in [0,1], v in [0,1].

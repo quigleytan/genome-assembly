@@ -1,13 +1,11 @@
-//
-// Created by quigl on 3/20/2026.
-//
+#ifndef DATA_LIST_H
+#define DATA_LIST_H
 
-#ifndef QUIGLEYTAN_GENOME_ASSEMBLER_DATALIST_H
-#define QUIGLEYTAN_GENOME_ASSEMBLER_DATALIST_H
 #pragma once
+
 #include <vector>
 #include <string>
 
 extern std::vector<std::string> sequence;
 
-#endif //QUIGLEYTAN_GENOME_ASSEMBLER_DATALIST_H
+#endif //DATA_LIST_H
