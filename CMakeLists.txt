@@ -3,42 +3,26 @@ project(M4OEP-tequigle)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# DEPENDENCY VERSIONS
-
-set(GLFW_VERSION  3.3.9)
-set(GLM_VERSION   1.0.1)
-set(IMGUI_VERSION 1.90.4)
-
-# FETCH LIBRARIES
-
 include(FetchContent)
 
-FetchContent_Declare(
-        glfw
-        URL https://github.com/glfw/glfw/archive/refs/tags/${GLFW_VERSION}.tar.gz
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+macro(fetch_dependency name url)
+    FetchContent_Declare(
+            ${name}
+            URL ${url}
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(${name})
+endmacro()
+
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(glfw)
 
-FetchContent_Declare(
-        glm
-        URL https://github.com/g-truc/glm/archive/refs/tags/${GLM_VERSION}.tar.gz
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(glm)
+fetch_dependency(glfw https://github.com/glfw/glfw/archive/refs/tags/3.3.9.tar.gz)
+fetch_dependency(glm https://github.com/g-truc/glm/archive/refs/tags/1.0.1.tar.gz)
+fetch_dependency(imgui https://github.com/ocornut/imgui/archive/refs/tags/v1.90.4.tar.gz)
 
-FetchContent_Declare(
-        imgui
-        URL https://github.com/ocornut/imgui/archive/refs/tags/v${IMGUI_VERSION}.tar.gz
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(imgui)
-
-# IMGUI STATIC LIBRARY
-
+#IMGUI
 add_library(ImGui STATIC
         ${imgui_SOURCE_DIR}/imgui.cpp
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -48,131 +32,54 @@ add_library(ImGui STATIC
         ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
-target_include_directories(ImGui PUBLIC
-        ${imgui_SOURCE_DIR}
-        ${imgui_SOURCE_DIR}/backends
-        ${glfw_SOURCE_DIR}/include
-)
-
+target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends ${glfw_SOURCE_DIR}/include)
 target_link_libraries(ImGui PUBLIC glfw)
-if (WIN32)
+
+if(WIN32)
     target_link_libraries(ImGui PUBLIC opengl32)
 endif()
 
-# SHARED INCLUDE ROOT
+macro(add_assembler_app target_name main_src)
+    add_executable(${target_name} ${main_src} ${ARGN})
+    target_include_directories(${target_name} PRIVATE "${CMAKE_SOURCE_DIR}/include")
+endmacro()
 
-set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
+set(CORE_SOURCES
+        src/core/data_list.cpp
+        src/core/dna_sequence.cpp
+        src/core/de_bruijn_graph.cpp
+        src/io/sequence_reader.cpp
+)
 
-# ASSEMBLY EXECUTABLES
-
-add_executable(FullReconstruction
+set(CONSTRUCTION_SOURCES
+        src/construction/kmer_encoding.cpp
+        src/construction/contig_assembler.cpp
+        src/construction/eulerian_assembler.cpp
+        src/construction/scaffolder.cpp
         src/construction/gap_estimation.cpp
         src/construction/gap_filling.cpp
 )
 
-set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
+# Executables
+add_assembler_app(ScaffoldAssembly      src/pipelines/scaffold_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/data_exporter.cpp)
+add_assembler_app(FastaEulerianAssembly src/pipelines/fasta_eulerian_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
+add_assembler_app(FastaContigAssembly   src/pipelines/fasta_contig_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
+add_assembler_app(FastqContigAssembly   src/pipelines/fastq_contig_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 
-add_executable(ScaffoldAssembly
-        src/pipelines/scaffold_assembly.cpp
-        src/core/data_list.cpp
-        src/core/dna_sequence.cpp
-        src/io/sequence_reader.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/de_bruijn_graph.cpp
-        src/construction/contig_assembler.cpp
-        src/construction/scaffolder.cpp
-        src/graphics/data_exporter.cpp
-)
-target_include_directories(ScaffoldAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
+# Tests
+add_assembler_app(InitializationTests   tests/InitializationTests.cpp src/core/dna_sequence.cpp src/io/sequence_reader.cpp src/construction/kmer_encoding.cpp)
+add_assembler_app(ProcessingTests       tests/ProcessingTests.cpp src/construction/kmer_encoding.cpp src/core/dna_sequence.cpp)
+add_assembler_app(ConstructionTests     tests/ConstructionTests.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 
-add_executable(FastaEulerianAssembly
-        src/pipelines/fasta_eulerian_assembly.cpp
-        src/core/data_list.cpp
-        src/core/dna_sequence.cpp
-        src/io/sequence_reader.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/de_bruijn_graph.cpp
-        src/construction/eulerian_assembler.cpp
-)
-target_include_directories(FastaEulerianAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
-
-add_executable(FastaContigAssembly
-        src/pipelines/fasta_contig_assembly.cpp
-        src/core/data_list.cpp
-        src/core/dna_sequence.cpp
-        src/io/sequence_reader.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/de_bruijn_graph.cpp
-        src/construction/contig_assembler.cpp
-        src/construction/scaffolder.cpp
-)
-target_include_directories(FastaContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
-
-add_executable(FastqContigAssembly
-        src/pipelines/fastq_contig_assembly.cpp
-        src/core/data_list.cpp
-        src/core/dna_sequence.cpp
-        src/io/sequence_reader.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/de_bruijn_graph.cpp
-        src/construction/contig_assembler.cpp
-)
-target_include_directories(FastqContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
-
-# TEST EXECUTABLES
-
-add_executable(InitializationTests
-        tests/InitializationTests.cpp
-        src/core/dna_sequence.cpp
-        src/io/sequence_reader.cpp
-        src/construction/kmer_encoding.cpp
-)
-target_include_directories(InitializationTests PRIVATE ${PROJECT_INCLUDE_DIR})
-
-add_executable(ProcessingTests
-        tests/ProcessingTests.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/dna_sequence.cpp
-)
-target_include_directories(ProcessingTests PRIVATE ${PROJECT_INCLUDE_DIR})
-
-add_executable(ConstructionTests
-        src/core/data_list.cpp
-        tests/ConstructionTests.cpp
-        src/core/de_bruijn_graph.cpp
-        src/construction/eulerian_assembler.cpp
-        src/construction/contig_assembler.cpp
-        src/construction/scaffolder.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/dna_sequence.cpp
-)
-target_include_directories(ConstructionTests PRIVATE ${PROJECT_INCLUDE_DIR})
-
-# VISUALIZER EXECUTABLE
-
-add_executable(Visualizer
+# Visualizer
+add_assembler_app(Visualizer
         src/graphics/gui.cpp
         src/graphics/contig_view.cpp
-        include/assembler/graphics/GraphView.cpp
         src/graphics/data_exporter.cpp
         src/graphics/data_loader.cpp
-        src/core/dna_sequence.cpp
-        src/io/sequence_reader.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/de_bruijn_graph.cpp
-        src/construction/eulerian_assembler.cpp
-        src/construction/contig_assembler.cpp
-        src/construction/scaffolder.cpp
+        ${CORE_SOURCES}
+        ${CONSTRUCTION_SOURCES}
 )
 
-target_include_directories(Visualizer PRIVATE
-        ${PROJECT_INCLUDE_DIR}
-        ${imgui_SOURCE_DIR}
-        ${imgui_SOURCE_DIR}/backends
-        ${glfw_SOURCE_DIR}/include
-        ${glm_SOURCE_DIR}
-)
+target_include_directories(Visualizer PRIVATE ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends ${glfw_SOURCE_DIR}/include ${glm_SOURCE_DIR})
 target_link_libraries(Visualizer PRIVATE ImGui glfw)
-if (WIN32)
-    target_link_libraries(Visualizer PRIVATE opengl32)
-endif()

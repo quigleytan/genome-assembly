@@ -20,7 +20,7 @@
 #include <stdexcept>
 
 #include "kmer_types.h"
-#include "encoding/open_addressing_table.h"
+#include "assembler/core/open_addressing_table.h"
 
 class KmerTable : public HashTable<NodeId, size_t> {
 

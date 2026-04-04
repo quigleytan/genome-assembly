@@ -21,10 +21,9 @@
 #include <vector>
 #include <string>
 
-#include "kmer_types.h"
-#include "recorder.h"
-#include "scaffolding/de_bruijn_graph.h"
-#include "encoding/open_addressing_table.h"
+#include "assembler/core/recorder.h"
+#include "assembler/core/de_bruijn_graph.h"
+#include "assembler/core/open_addressing_table.h"
 
 class ContigAssembler {
 

@@ -1,9 +1,9 @@
-#include "scaffolding/eulerian_traversal.h"
+#include "assembler/construction/eulerian_assembler.h"
 
 #include <stack>
 #include <algorithm>
 
-#include "encoding/kmer_encoding.h"
+#include "assembler/construction/kmer_encoding.h"
 
 // PRIVATE HELPER FUNCTIONS
 

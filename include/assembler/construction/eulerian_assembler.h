@@ -17,10 +17,9 @@
 #include <vector>
 #include <string>
 
-#include "kmer_types.h"
-#include "scaffolding/de_bruijn_graph.h"
-#include "encoding/open_addressing_table.h"
-
+#include "assembler/core/kmer_types.h"
+#include "assembler/core/open_addressing_table.h"
+#include "assembler/core/de_bruijn_graph.h"
 
 class EulerianAssembler {
 

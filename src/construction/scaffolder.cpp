@@ -1,4 +1,4 @@
-#include "scaffolding/scaffolder.h"
+#include "assembler/construction/scaffolder.h"
 
 #include <limits>
 #include <algorithm>
@@ -6,7 +6,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "encoding/kmer_encoding.h"
+#include "assembler/construction/kmer_encoding.h"
 
 
 // PRIVATE HELPER FUNCTIONS
@@ -36,13 +36,13 @@ void Scaffolder::buildConnectionMap() {
     }
 }
 
-double Scaffolder::computeLengthScore(const ContigTraversal::Contig& contig) const {
+double Scaffolder::computeLengthScore(const ContigAssembler::Contig& contig) const {
     return (maxContigLength_ > 0)
         ? static_cast<double>(contig.sequence.length()) / maxContigLength_
         : 0.0;
 }
 
-double Scaffolder::computeFrequencyScore(const ContigTraversal::Contig& contig) const {
+double Scaffolder::computeFrequencyScore(const ContigAssembler::Contig& contig) const {
     const size_t k   = graph_.getK();
     const std::string& seq = contig.sequence;
 
@@ -76,7 +76,7 @@ double Scaffolder::computeFrequencyScore(const ContigTraversal::Contig& contig) 
     return (freqCap > 0.0) ? std::min(avgFrequency / freqCap, 1.0) : 0.0;
 }
 
-double Scaffolder::computeOverlapScore(const ContigTraversal::Contig& contig) const {
+double Scaffolder::computeOverlapScore(const ContigAssembler::Contig& contig) const {
     const size_t nodeLen = graph_.getK() - 1;
 
     if (contig.sequence.length() < nodeLen) return 0.0;
@@ -92,7 +92,7 @@ double Scaffolder::computeOverlapScore(const ContigTraversal::Contig& contig) co
 }
 
 double Scaffolder::scoreContig(size_t contigIndex) const {
-    const ContigTraversal::Contig& contig = contigs_[contigIndex];
+    const ContigAssembler::Contig& contig = contigs_[contigIndex];
 
     double effectiveLengthWeight    = strategy_.weights.lengthWeight;
     double effectiveFrequencyWeight = strategy_.weights.kmerFrequencyWeight;
@@ -175,7 +175,7 @@ bool Scaffolder::isScaffoldStart(size_t contigIndex) const {
 
 // PUBLIC
 
-Scaffolder::Scaffolder(const std::vector<ContigTraversal::Contig>& contigs,
+Scaffolder::Scaffolder(const std::vector<ContigAssembler::Contig>& contigs,
                                    const DeBruijnGraph& graph,
                                    ResolutionStrategy strategy,
                                    const KmerTable* kmerTable)
@@ -225,7 +225,7 @@ void Scaffolder::toVisSession(VisSession& session, size_t nodeLen) const {
     session.contigs.reserve(contigs_.size());
 
     for (size_t i = 0; i < contigs_.size(); ++i) {
-        const ContigTraversal::Contig& src = contigs_[i];
+        const ContigAssembler::Contig& src = contigs_[i];
 
         VisContig vc;
         vc.sequence      = src.sequence;

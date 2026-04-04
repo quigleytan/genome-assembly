@@ -5,7 +5,7 @@
  * - Orders contigs into scaffolds using shared boundary node relationships.
  * - Supports multiple branch resolution strategies for comparison.
  * Important notes:
- * - Operates on contigs produced by ContigTraversal.
+ * - Operates on contigs produced by ContigAssembler.
  * - Scaffolds are ordered lists of contig indices with gap estimates.
  * - Ambiguous branch points are handled according to ResolutionStrategy.
  * - KmerFrequency and OverlapQuality scoring require an optional kmer_table.
@@ -18,12 +18,13 @@
 #include <vector>
 #include <string>
 
-#include "../core/kmer_types.h"
-#include "../core/vis_data.h"
-#include "scaffolding/de_bruijn_graph.h"
-#include "scaffolding/contig_traversal.h"
-#include "encoding/kmer_table.h"
-#include "encoding/open_addressing_table.h"
+#include "assembler/core/kmer_types.h"
+#include "assembler/core/vis_data.h"
+#include "assembler/core/de_bruijn_graph.h"
+#include "assembler/core/kmer_table.h"
+#include "assembler/core/open_addressing_table.h"
+#include "assembler/construction/contig_assembler.h"
+
 
 // SCORING WEIGHT CONFIGURATIONS
 
@@ -92,7 +93,7 @@ class Scaffolder {
 
 private:
 
-    const std::vector<ContigTraversal::Contig>& contigs_;
+    const std::vector<ContigAssembler::Contig>& contigs_;
     const DeBruijnGraph& graph_;
     const KmerTable*     kmerTable_;
     size_t               maxContigLength_ = 0;
@@ -105,9 +106,9 @@ private:
 
     void buildConnectionMap();
 
-    [[nodiscard]] double computeLengthScore(const ContigTraversal::Contig& contig) const;
-    [[nodiscard]] double computeFrequencyScore(const ContigTraversal::Contig& contig) const;
-    [[nodiscard]] double computeOverlapScore(const ContigTraversal::Contig& contig) const;
+    [[nodiscard]] double computeLengthScore(const ContigAssembler::Contig& contig) const;
+    [[nodiscard]] double computeFrequencyScore(const ContigAssembler::Contig& contig) const;
+    [[nodiscard]] double computeOverlapScore(const ContigAssembler::Contig& contig) const;
 
     [[nodiscard]] double scoreContig(size_t contigIndex) const;
 
@@ -124,12 +125,12 @@ public:
     /**
      * @brief Constructor for ContigScaffolder.
      *
-     * @param contigs    Contigs produced by ContigTraversal.
+     * @param contigs    Contigs produced by ContigAssembler.
      * @param graph      DeBruijnGraph used to build the contigs.
      * @param strategy   Branch resolution strategy (default: skip).
      * @param kmerTable  Optional KmerTable for frequency scoring. nullptr = disabled.
      */
-    Scaffolder(const std::vector<ContigTraversal::Contig>& contigs,
+    Scaffolder(const std::vector<ContigAssembler::Contig>& contigs,
                      const DeBruijnGraph& graph,
                      ResolutionStrategy strategy  = ResolutionStrategy::skip(),
                      const KmerTable*   kmerTable = nullptr);
@@ -155,7 +156,7 @@ public:
      *
      * Called by the pipeline after buildScaffolds() when visualization
      * is requested. Populates session.contigs and session.scaffolds.
-     * Does not touch session.contigSteps — those are written by ContigTraversal.
+     * Does not touch session.contigSteps — those are written by ContigAssembler.
      *
      * @param session  VisSession to populate. Must already have session.k set.
      * @param nodeLen  k-1 — used to decode start/end node labels.

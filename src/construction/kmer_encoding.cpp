@@ -1,8 +1,9 @@
-#include "encoding/kmer_encoding.h"
+#include "assembler/construction/kmer_encoding.h"
 
 #include <stdexcept>
 
-#include "exceptions/DNASequenceException.h"
+#include "assembler/exceptions/DNASequenceException.h"
+#include "assembler/core/open_addressing_table.h"
 
 // PUBLIC
 

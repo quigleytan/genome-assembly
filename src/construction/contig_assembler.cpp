@@ -1,9 +1,9 @@
-#include "scaffolding/contig_building.h"
+#include "assembler/construction/contig_assembler.h"
 
 #include <algorithm>
 #include <iostream>
 
-#include "encoding/kmer_encoding.h"
+#include "assembler/construction/kmer_encoding.h"
 
 // PRIVATE HELPER FUNCTIONS
 
