@@ -17,7 +17,7 @@
 #define DATA_LOADER_H
 
 #include <string>
-#include "VisData.h"
+#include "../core/vis_data.h"
 
 class DataLoader {
 

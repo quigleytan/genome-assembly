@@ -1,4 +1,4 @@
-#include "DataList.h"
+#include "../../include/core/data_list.h"
 
 std::vector<std::string> sequence = {
     "practice sequence.fna",

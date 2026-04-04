@@ -1,5 +1,5 @@
-#include "dna_sequence.h"
-#include "sequence_reader.h"
+#include "../include/data_initalization/dna_sequence.h"
+#include "../include/data_initalization/sequence_reader.h"
 #include "encoding/kmer_encoding.h"
 #include "encoding/kmer_table.h"
 #include <fstream>

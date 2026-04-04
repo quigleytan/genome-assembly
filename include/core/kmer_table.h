@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "KmerTypes.h"
+#include "kmer_types.h"
 #include "encoding/open_addressing_table.h"
 
 class KmerTable : public HashTable<NodeId, size_t> {

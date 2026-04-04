@@ -18,7 +18,7 @@
 #define DATA_EXPORTER_H
 
 #include <string>
-#include "VisData.h"
+#include "../core/vis_data.h"
 
 class DataExporter {
 

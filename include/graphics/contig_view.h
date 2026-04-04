@@ -19,7 +19,7 @@
 #include <cstdint>
 
 #include "imgui.h"
-#include "VisData.h"
+#include "../core/vis_data.h"
 
 class ContigView {
 

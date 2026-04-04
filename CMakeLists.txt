@@ -66,103 +66,103 @@ set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
 # ASSEMBLY EXECUTABLES
 
 add_executable(FullReconstruction
-        gap_resolution/gap_estimation.cpp
-        gap_resolution/gap_filling.cpp
+        include/gap_resolution/gap_estimation.cpp
+        include/gap_resolution/gap_filling.cpp
 )
 
 set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
 
 add_executable(ScaffoldAssembly
-        pipelines/ScaffoldAssembly.cpp
-        DataList.cpp
-        data_initalization/dna_sequence.cpp
-        data_initalization/sequence_reader.cpp
-        encoding/kmer_encoding.cpp
-        ScaffoldConstruction/de_bruijn_graph.cpp
-        ScaffoldConstruction/contig_traversal.cpp
-        ScaffoldConstruction/scaffolder.cpp
-        graphics/data_exporter.cpp
+        src/pipelines/scaffold_assembly.cpp
+        src/core/data_list.cpp
+        include/data_initalization/dna_sequence.cpp
+        include/data_initalization/sequence_reader.cpp
+        include/encoding/kmer_encoding.cpp
+        include/scaffolding/de_bruijn_graph.cpp
+        include/scaffolding/contig_traversal.cpp
+        include/scaffolding/scaffolder.cpp
+        include/graphics/data_exporter.cpp
 )
 target_include_directories(ScaffoldAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(FastaEulerianAssembly
-        pipelines/FastaEulerianAssembly.cpp
-        DataList.cpp
-        data_initalization/dna_sequence.cpp
-        data_initalization/sequence_reader.cpp
-        encoding/kmer_encoding.cpp
-        ScaffoldConstruction/de_bruijn_graph.cpp
-        ScaffoldConstruction/eulerian_traversal.cpp
+        src/pipelines/fasta_eulerian_assembly.cpp
+        src/core/data_list.cpp
+        include/data_initalization/dna_sequence.cpp
+        include/data_initalization/sequence_reader.cpp
+        include/encoding/kmer_encoding.cpp
+        include/scaffolding/de_bruijn_graph.cpp
+        include/scaffolding/eulerian_traversal.cpp
 )
 target_include_directories(FastaEulerianAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(FastaContigAssembly
-        pipelines/FastaContigAssembly.cpp
-        DataList.cpp
-        data_initalization/dna_sequence.cpp
-        data_initalization/sequence_reader.cpp
-        encoding/kmer_encoding.cpp
-        ScaffoldConstruction/de_bruijn_graph.cpp
-        ScaffoldConstruction/contig_traversal.cpp
-        ScaffoldConstruction/scaffolder.cpp
+        src/pipelines/fasta_contig_assembly.cpp
+        src/core/data_list.cpp
+        include/data_initalization/dna_sequence.cpp
+        include/data_initalization/sequence_reader.cpp
+        include/encoding/kmer_encoding.cpp
+        include/scaffolding/de_bruijn_graph.cpp
+        include/scaffolding/contig_traversal.cpp
+        include/scaffolding/scaffolder.cpp
 )
 target_include_directories(FastaContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(FastqContigAssembly
-        pipelines/FastqContigAssembly.cpp
-        DataList.cpp
-        data_initalization/dna_sequence.cpp
-        data_initalization/sequence_reader.cpp
-        encoding/kmer_encoding.cpp
-        ScaffoldConstruction/de_bruijn_graph.cpp
-        ScaffoldConstruction/contig_traversal.cpp
+        src/pipelines/fastq_contig_assembly.cpp
+        src/core/data_list.cpp
+        include/data_initalization/dna_sequence.cpp
+        include/data_initalization/sequence_reader.cpp
+        include/encoding/kmer_encoding.cpp
+        include/scaffolding/de_bruijn_graph.cpp
+        include/scaffolding/contig_traversal.cpp
 )
 target_include_directories(FastqContigAssembly PRIVATE ${PROJECT_INCLUDE_DIR})
 
 # TEST EXECUTABLES
 
 add_executable(InitializationTests
-        data_initalization/InitializationTests.cpp
-        data_initalization/dna_sequence.cpp
-        data_initalization/sequence_reader.cpp
-        encoding/kmer_encoding.cpp
+        tests/InitializationTests.cpp
+        include/data_initalization/dna_sequence.cpp
+        include/data_initalization/sequence_reader.cpp
+        include/encoding/kmer_encoding.cpp
 )
 target_include_directories(InitializationTests PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(ProcessingTests
-        encoding/ProcessingTests.cpp
-        encoding/kmer_encoding.cpp
-        data_initalization/dna_sequence.cpp
+        tests/ProcessingTests.cpp
+        include/encoding/kmer_encoding.cpp
+        include/data_initalization/dna_sequence.cpp
 )
 target_include_directories(ProcessingTests PRIVATE ${PROJECT_INCLUDE_DIR})
 
 add_executable(ConstructionTests
-        DataList.cpp
-        ScaffoldConstruction/ConstructionTests.cpp
-        ScaffoldConstruction/de_bruijn_graph.cpp
-        ScaffoldConstruction/eulerian_traversal.cpp
-        ScaffoldConstruction/contig_traversal.cpp
-        ScaffoldConstruction/scaffolder.cpp
-        encoding/kmer_encoding.cpp
-        data_initalization/dna_sequence.cpp
+        src/core/data_list.cpp
+        tests/ConstructionTests.cpp
+        include/scaffolding/de_bruijn_graph.cpp
+        include/scaffolding/eulerian_traversal.cpp
+        include/scaffolding/contig_traversal.cpp
+        include/scaffolding/scaffolder.cpp
+        include/encoding/kmer_encoding.cpp
+        include/data_initalization/dna_sequence.cpp
 )
 target_include_directories(ConstructionTests PRIVATE ${PROJECT_INCLUDE_DIR})
 
 # VISUALIZER EXECUTABLE
 
 add_executable(Visualizer
-        graphics/gui.cpp
-        graphics/contig_view.cpp
-        graphics/GraphView.cpp
-        graphics/data_exporter.cpp
-        graphics/data_loader.cpp
-        data_initalization/dna_sequence.cpp
-        data_initalization/sequence_reader.cpp
-        encoding/kmer_encoding.cpp
-        ScaffoldConstruction/de_bruijn_graph.cpp
-        ScaffoldConstruction/eulerian_traversal.cpp
-        ScaffoldConstruction/contig_traversal.cpp
-        ScaffoldConstruction/scaffolder.cpp
+        include/graphics/gui.cpp
+        include/graphics/contig_view.cpp
+        include/graphics/GraphView.cpp
+        include/graphics/data_exporter.cpp
+        include/graphics/data_loader.cpp
+        include/data_initalization/dna_sequence.cpp
+        include/data_initalization/sequence_reader.cpp
+        include/encoding/kmer_encoding.cpp
+        include/scaffolding/de_bruijn_graph.cpp
+        include/scaffolding/eulerian_traversal.cpp
+        include/scaffolding/contig_traversal.cpp
+        include/scaffolding/scaffolder.cpp
 )
 
 target_include_directories(Visualizer PRIVATE

@@ -18,10 +18,10 @@
 #include <vector>
 #include <string>
 
-#include "KmerTypes.h"
-#include "VisData.h"
-#include "ScaffoldConstruction/de_bruijn_graph.h"
-#include "ScaffoldConstruction/contig_traversal.h"
+#include "../core/kmer_types.h"
+#include "../core/vis_data.h"
+#include "scaffolding/de_bruijn_graph.h"
+#include "scaffolding/contig_traversal.h"
 #include "encoding/kmer_table.h"
 #include "encoding/open_addressing_table.h"
 

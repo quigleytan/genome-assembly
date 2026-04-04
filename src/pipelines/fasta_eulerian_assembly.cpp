@@ -7,9 +7,9 @@
 #include "../data_initalization/sequence_reader.h"
 #include "../encoding/kmer_encoding.h"
 #include "../encoding/kmer_table.h"
-#include "../ScaffoldConstruction/de_bruijn_graph.h"
-#include "../ScaffoldConstruction/eulerian_traversal.h"
-#include "DataList.h"
+#include "../scaffolding/de_bruijn_graph.h"
+#include "../scaffolding/eulerian_traversal.h"
+#include "data_list.h"
 
 // HELPER FUNCTION
 

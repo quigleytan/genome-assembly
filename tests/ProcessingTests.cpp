@@ -1,8 +1,8 @@
 #include <iostream>
 #include <ostream>
 
-#include "kmer_encoding.h"
-#include "kmer_table.h"
+#include "../include/encoding/kmer_encoding.h"
+#include "../include/core/kmer_table.h"
 #include "data_initalization/dna_sequence.h"
 
 bool kmerEncoderTests();

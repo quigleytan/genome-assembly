@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <iostream>
 #include <vector>
-#include "KmerTypes.h"
+#include "kmer_types.h"
 #include "encoding/open_addressing_table.h"
 
 class DeBruijnGraph {

@@ -17,8 +17,8 @@
 
 #include <string>
 
-#include "kmer_table.h"
-#include "KmerTypes.h"
+#include "../core/kmer_table.h"
+#include "../core/kmer_types.h"
 
 class KmerEncoding {
 

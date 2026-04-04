@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "VisData.h"
+#include "vis_data.h"
 
 class Recorder {
 

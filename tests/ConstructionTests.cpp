@@ -2,12 +2,12 @@
 #include <ostream>
 #include <vector>
 
-#include "de_bruijn_graph.h"
+#include "../include/core/de_bruijn_graph.h"
 #include "data_initalization/dna_sequence.h"
 #include "encoding/kmer_encoding.h"
 #include "encoding/kmer_table.h"
-#include "eulerian_traversal.h"
-#include "contig_traversal.h"
+#include "../include/scaffolding/eulerian_traversal.h"
+#include "../include/scaffolding/contig_traversal.h"
 
 bool DebruijnGraphTests();
 bool EulerianPathTests();

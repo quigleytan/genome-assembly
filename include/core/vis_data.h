@@ -19,7 +19,7 @@
 #include <string>
 #include <cstdint>
 
-#include "KmerTypes.h"
+#include "kmer_types.h"
 
 // ANIMATION STEPS
 

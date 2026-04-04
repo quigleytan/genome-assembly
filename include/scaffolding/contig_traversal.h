@@ -21,9 +21,9 @@
 #include <vector>
 #include <string>
 
-#include "KmerTypes.h"
-#include "Recorder.h"
-#include "ScaffoldConstruction/de_bruijn_graph.h"
+#include "kmer_types.h"
+#include "recorder.h"
+#include "scaffolding/de_bruijn_graph.h"
 #include "encoding/open_addressing_table.h"
 
 class ContigTraversal {

@@ -3,17 +3,17 @@
 #include <vector>
 #include <string>
 
-#include "../DataList.h"
+#include "../data_list.h"
 #include "../data_initalization/sequence_reader.h"
 
 #include "../encoding/kmer_table.h"
 
-#include "../ScaffoldConstruction/de_bruijn_graph.h"
-#include "../ScaffoldConstruction/scaffolder.h"
-#include "../ScaffoldConstruction/contig_traversal.h"
+#include "../scaffolding/de_bruijn_graph.h"
+#include "../scaffolding/scaffolder.h"
+#include "../scaffolding/contig_traversal.h"
 
-#include "../VisData.h"
-#include "../Recorder.h"
+#include "../vis_data.h"
+#include "../recorder.h"
 #include "../graphics/data_exporter.h"
 
 // CONSTANTS

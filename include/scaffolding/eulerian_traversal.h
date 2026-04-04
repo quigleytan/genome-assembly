@@ -17,8 +17,8 @@
 #include <vector>
 #include <string>
 
-#include "KmerTypes.h"
-#include "ScaffoldConstruction/de_bruijn_graph.h"
+#include "kmer_types.h"
+#include "scaffolding/de_bruijn_graph.h"
 #include "encoding/open_addressing_table.h"
 
 
