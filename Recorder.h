@@ -16,9 +16,6 @@
 #include "VisData.h"
 
 class Recorder {
-private:
-
-    VisSession* session_;
 
 public:
 
@@ -96,6 +93,10 @@ public:
         step.base        = isCircular ? 'C' : 'L'; // C = circular, L = linear
         session_->contigSteps.push_back(std::move(step));
     }
+
+private:
+
+    VisSession* session_;
 
 };
 #endif // RECORDER_H

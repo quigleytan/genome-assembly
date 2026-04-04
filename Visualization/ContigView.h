@@ -3,12 +3,12 @@
  * Summary:
  * - Renders the contig/scaffold bar visualization and animation playback.
  * - Owned by VisualizerApp. Called every frame via update() and render().
- * - All rendering is done through ImGui's DrawList API — no direct OpenGL calls.
+ * - All rendering is done through ImGui's DrawList API - no direct OpenGL calls.
  * Important notes:
  * - Bars are sorted by contig length descending within each scaffold group.
  * - Animation interpolates bar width between ContigStarted and ContigFinished
  *   so playback is readable at any speed regardless of sequence length.
- * - selectedContig_ drives the detail panel — -1 means nothing selected.
+ * - selectedContig_ drives the detail panel - -1 means nothing selected.
  */
 
 #ifndef CONTIG_VIEW_H
@@ -28,14 +28,14 @@ public:
     /**
      * @brief Constructs a ContigView for the given session.
      * Precomputes display state, sort order, colors, and bar widths.
-     * @param session Fully loaded VisSession. Must outlive this ContigView.
+     * @param session Fully loaded VisSession.
      */
     explicit ContigView(const VisSession& session);
 
     /**
      * @brief Advances animation state by deltaTime seconds.
      * No-op if not playing or if the step list is exhausted.
-     * @param deltaTime Seconds since last frame (from VisualizerApp's frame timer).
+     * @param deltaTime Seconds since the last frame (from VisualizerApp's frame timer).
      */
     void update(float deltaTime);
 
@@ -47,78 +47,70 @@ public:
 
 private:
 
-    // DATA
-
     const VisSession& session_;
 
     // PER-CONTIG DISPLAY STATE
-
     struct ContigDisplayState {
         bool     visible       = false; // True after ContigStarted step
         float    fillFraction  = 0.0f;  // 0.0 = empty, 1.0 = fully built
-        uint32_t color         = 0;     // IM_COL32 RGBA — set in constructor
+        uint32_t color         = 0;     // IM_COL32 RGBA - set in constructor
         size_t   basesAppended = 0;     // Running count for interpolation
     };
     std::vector<ContigDisplayState> displayStates_;
 
-    // One entry per scaffold — sorted contig index list
+    // One entry per scaffold - sorted contig index list
     struct ScaffoldRow {
         size_t              scaffoldIndex;
         std::vector<size_t> sortedContigIndices; // sorted longest-first
         bool                isCircular = false;
     };
-    std::vector<ScaffoldRow> scaffoldRows_;
 
-    // Unscaffolded contigs — sorted longest-first
-    std::vector<size_t> unscaffoldedContigs_;
+    std::vector<ScaffoldRow> scaffoldRows_;
+    std::vector<size_t> unscaffoldedContigs_; // Unscaffolded contigs - sorted longest-first
 
     // ANIMATION STATE
-
     size_t currentStep_  = 0;
     bool   playing_      = false;
     float  accumulator_  = 0.0f;  // Fractional steps carried between frames
 
-    // Fixed speed presets — steps per second
+    // Fixed speed presets - steps per second
     static constexpr float SPEED_PRESETS[]    = { 10.0f, 50.0f, 200.0f, 1000.0f };
     static constexpr const char* SPEED_LABELS[] = { "0.5x", "1x", "5x", "50x" };
     static constexpr int   NUM_PRESETS        = 4;
     int    speedPresetIndex_ = 1; // Default: 1x
 
-    // INTERACTION STATE
-
     int selectedContig_ = -1; // Index into session_.contigs, -1 = none
 
     // LAYOUT CONSTANTS
-
     static constexpr float BAR_HEIGHT    = 22.0f;
     static constexpr float BAR_MAX_WIDTH = 580.0f;
-    static constexpr float BAR_SPACING   = 5.0f;   // Vertical gap between bars
-    static constexpr float SCAFFOLD_GAP  = 16.0f;  // Extra gap between scaffold groups
-    static constexpr float GAP_BAR_WIDTH = 10.0f;  // Width of unknown-gap indicator
-    static constexpr float DETAIL_WIDTH_FRACTION = 0.30f; // Detail panel takes 30% of window
+    static constexpr float BAR_SPACING   = 5.0f;          // Vertical gap between bars
+    static constexpr float SCAFFOLD_GAP  = 16.0f;         // Extra gap between scaffold groups
+    static constexpr float GAP_BAR_WIDTH = 10.0f;         // Width of unknown-gap indicator
+    static constexpr float DETAIL_WIDTH_FRACTION = 0.30f; // Detail panel takes 30% of the window
 
-    // Genome map tab state
+    // GENOME MAP TAB STATE
     static constexpr float CELL_WIDTH     = 10.0f;  // px per base character
     static constexpr float CELL_HEIGHT    = 18.0f;  // px per row
     static constexpr int   BASES_PER_ROW  = 60;     // wraps at 60 chars like FASTA
 
-    // Segment lookup - maps character position to scaffold or gap index
+    // SEGMENT LOOKKI{
     struct GenomeSegment {
         enum class Type { Scaffold, Gap };
         Type   type;
-        size_t index;        // scaffold index or gap index
-        size_t startPos;     // position in genomeSequence
+        size_t index;    // scaffold index or gap index
+        size_t startPos; // position in genomeSequence
         size_t length;
     };
     std::vector<GenomeSegment> genomeSegments_; // built in buildDisplayData()
     int selectedSegment_ = -1;                  // -1 = none
 
-    // Sub-renderer added in phase 2 for genome map tab
+    // SUB-RENDERER
     void renderAnimationTab();
     void renderGenomeMapTab();
     void buildGenomeSegments();
-    // PRECOMPUTED DATA
 
+    // PRECOMPUTED DATA
     size_t maxContigLength_ = 1; // Longest contig - denominator for bar widths
 
     // PRIVATE METHODS
@@ -158,7 +150,7 @@ private:
     void applyStep(const TraversalStep& step);
 
     /**
-     * @brief Resets all display state and replays from step 0.
+     * @brief Resets the display state and replays from step 0.
      * Called when the user scrubs the timeline slider or presses restart.
      */
     void resetAnimation();
@@ -174,7 +166,7 @@ private:
 
     /**
      * @brief Renders the scrollable bar view panel (left side).
-     * @param availWidth Total width available for the bar view panel.
+     * @param availWidth  Total width available for the bar view panel.
      * @param availHeight Total height available (excluding timeline bar).
      */
     void renderBarPanel(float availWidth, float availHeight);
@@ -189,8 +181,8 @@ private:
 
     /**
      * @brief Renders the detail panel (right side).
-     * Shows metadata for selectedContig_, or a placeholder if none selected.
-     * @param panelWidth Width of the detail panel.
+     * Shows metadata for selectedContig_, or a placeholder if none are selected.
+     * @param panelWidth  Width of the detail panel.
      * @param availHeight Height available.
      */
     void renderDetailPanel(float panelWidth, float availHeight);
