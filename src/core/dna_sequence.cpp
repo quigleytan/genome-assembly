@@ -1,4 +1,4 @@
-#include "dna_sequence.h"
+#include "data_initalization/dna_sequence.h"
 
 #include "exceptions/DNASequenceException.h"
 

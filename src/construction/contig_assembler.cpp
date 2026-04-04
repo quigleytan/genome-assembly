@@ -1,4 +1,4 @@
-#include "contig_traversal.h"
+#include "scaffolding/contig_building.h"
 
 #include <algorithm>
 #include <iostream>
@@ -7,7 +7,7 @@
 
 // PRIVATE HELPER FUNCTIONS
 
-void ContigTraversal::initializeAdjacency() {
+void ContigAssembler::initializeAdjacency() {
     adjCopy_ = HashTable<NodeId, std::vector<NodeId>>(
         graph_.getNodeCount() * 2);
 
@@ -25,12 +25,12 @@ void ContigTraversal::initializeAdjacency() {
     }
 }
 
-bool ContigTraversal::isAmbiguous(NodeId node) const {
+bool ContigAssembler::isAmbiguous(NodeId node) const {
     const auto* data = graph_.findNode(node);
     return data->getInDegree() > 1 || data->getOutDegree() > 1;
 }
 
-ContigTraversal::Contig ContigTraversal::walkContig(NodeId startNode, size_t contigIndex) {
+ContigAssembler::Contig ContigAssembler::walkContig(NodeId startNode, size_t contigIndex) {
     Contig result;
     result.startNode  = startNode;
     result.isCircular = false;
@@ -101,7 +101,7 @@ ContigTraversal::Contig ContigTraversal::walkContig(NodeId startNode, size_t con
     return result;
 }
 
-void ContigTraversal::handleIsolatedCycles() {
+void ContigAssembler::handleIsolatedCycles() {
     for (NodeId node : graph_.getAllNodes()) {
         if (isAmbiguous(node)) continue;
 
@@ -119,12 +119,12 @@ void ContigTraversal::handleIsolatedCycles() {
 
 // PUBLIC
 
-ContigTraversal::ContigTraversal(DeBruijnGraph& g, Recorder* recorder)
+ContigAssembler::ContigAssembler(DeBruijnGraph& g, Recorder* recorder)
     : graph_(g),
       adjCopy_(g.getNodeCount() * 2),
       recorder_(recorder) {}
 
-void ContigTraversal::computeContigs() {
+void ContigAssembler::computeContigs() {
     contigs_.clear();
     initializeAdjacency();
 
@@ -152,11 +152,11 @@ void ContigTraversal::computeContigs() {
     handleIsolatedCycles();
 }
 
-const std::vector<ContigTraversal::Contig>& ContigTraversal::getContigs() const {
+const std::vector<ContigAssembler::Contig>& ContigAssembler::getContigs() const {
     return contigs_;
 }
 
-void ContigTraversal::printStats() const {
+void ContigAssembler::printStats() const {
     if (contigs_.empty()) {
         std::cout << "No contigs found\n";
         return;

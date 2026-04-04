@@ -26,7 +26,7 @@
 #include "scaffolding/de_bruijn_graph.h"
 #include "encoding/open_addressing_table.h"
 
-class ContigTraversal {
+class ContigAssembler {
 
 public:
 
@@ -94,7 +94,7 @@ public:
      * @param recorder Optional recorder for visualization. Pass nullptr (default)
      *                 for normal pipeline runs — all recording calls become no-ops.
      */
-    explicit ContigTraversal(DeBruijnGraph& g, Recorder* recorder = nullptr);
+    explicit ContigAssembler(DeBruijnGraph& g, Recorder* recorder = nullptr);
 
     /**
      * @brief Constructs all contigs from the graph in two phases.

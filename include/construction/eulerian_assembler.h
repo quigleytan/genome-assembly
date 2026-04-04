@@ -22,7 +22,7 @@
 #include "encoding/open_addressing_table.h"
 
 
-class EulerianTraversal {
+class EulerianAssembler {
 
 private:
 
@@ -53,7 +53,7 @@ public:
      * @brief Constructor for EulerianTraversal.
      * @param g The DeBruijnGraph to traverse.
      */
-    EulerianTraversal(DeBruijnGraph& g);
+    EulerianAssembler(DeBruijnGraph& g);
 
     /**
      * @brief Computes an Eulerian path or circuit using Hierholzer's algorithm.

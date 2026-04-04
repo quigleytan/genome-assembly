@@ -1,4 +1,4 @@
-#include "eulerian_traversal.h"
+#include "scaffolding/eulerian_traversal.h"
 
 #include <stack>
 #include <algorithm>
@@ -7,7 +7,7 @@
 
 // PRIVATE HELPER FUNCTIONS
 
-void EulerianTraversal::initializeAdjacency() {
+void EulerianAssembler::initializeAdjacency() {
 
     for (NodeId node : graph_.getAllNodes()) {
         adjCopy_.insert(node);
@@ -21,7 +21,7 @@ void EulerianTraversal::initializeAdjacency() {
     }
 }
 
-NodeId EulerianTraversal::findStartNode() const {
+NodeId EulerianAssembler::findStartNode() const {
 
     auto nodes = graph_.getAllNodes();
     NodeId startNode = nodes.front(); // Protects in case of cycle.
@@ -52,9 +52,9 @@ NodeId EulerianTraversal::findStartNode() const {
 
 // PUBLIC
 
-EulerianTraversal::EulerianTraversal(DeBruijnGraph& g) : graph_(g), adjCopy_(g.getNodeCount() * 2) {}
+EulerianAssembler::EulerianAssembler(DeBruijnGraph& g) : graph_(g), adjCopy_(g.getNodeCount() * 2) {}
 
-void EulerianTraversal::computePath() {
+void EulerianAssembler::computePath() {
 
     path_.clear();
     initializeAdjacency();
@@ -85,11 +85,11 @@ void EulerianTraversal::computePath() {
     std::reverse(path_.begin(), path_.end());
 }
 
-const std::vector<NodeId>& EulerianTraversal::getPath() const {
+const std::vector<NodeId>& EulerianAssembler::getPath() const {
     return path_;
 }
 
-std::string EulerianTraversal::reconstructGenome(bool isCircuit) const {
+std::string EulerianAssembler::reconstructGenome(bool isCircuit) const {
     if (path_.empty())
         throw std::runtime_error("Path is empty — call computePath() first");
 

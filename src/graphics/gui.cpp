@@ -21,7 +21,7 @@
 // Project
 #include "graphics/contig_view.h"
 #include "graphics/data_loader.h"
-#include "../core/vis_data.h"
+#include "../../include/core/vis_data.h"
 
 // CONSTANTS
 

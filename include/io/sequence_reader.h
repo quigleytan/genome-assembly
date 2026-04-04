@@ -18,7 +18,7 @@
 #include <istream>
 #include <string>
 
-#include "dna_sequence.h"
+#include "../core/dna_sequence.h"
 #include "encoding/kmer_table.h"
 
 class SequenceReader {
