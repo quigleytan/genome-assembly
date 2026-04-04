@@ -17,7 +17,7 @@
 #define DATA_LOADER_H
 
 #include <string>
-#include "../core/vis_data.h"
+#include "assembler/core/vis_data.h"
 
 class DataLoader {
 
@@ -60,9 +60,22 @@ private:
         size_t eulerSteps    = 0;
         size_t genomeLength  = 0;
     };
+
+    /**
+     *
+     * @param in
+     * @param session
+     * @return
+     */
     static HeaderCounts parseHeader(std::istream& in, VisSession& session);
 
+    /**
+     *
+     * @param in
+     * @param session
+     */
     static void parseGenome(std::istream& in, VisSession& session);
+
     /**
      * @brief Parses the BEGIN_CONTIGS ... END_CONTIGS block.
      */
@@ -76,32 +89,12 @@ private:
                                const HeaderCounts& counts);
 
     /**
-     * @brief Parses the BEGIN_NODES ... END_NODES block (phase 2).
-     * Produces an empty node list if the block is present but empty.
-     */
-    static void parseNodes(std::istream& in, VisSession& session,
-                           const HeaderCounts& counts);
-
-    /**
-     * @brief Parses the BEGIN_EDGES ... END_EDGES block (phase 2).
-     * Produces an empty edge list if the block is present but empty.
-     */
-    static void parseEdges(std::istream& in, VisSession& session,
-                           const HeaderCounts& counts);
-
-    /**
      * @brief Parses the BEGIN_CONTIG_STEPS ... END_CONTIG_STEPS block.
      * Expands RUN blocks into individual BaseAppended steps.
      */
     static void parseContigSteps(std::istream& in, VisSession& session,
                                  const HeaderCounts& counts);
 
-    /**
-     * @brief Parses the BEGIN_EULER_STEPS ... END_EULER_STEPS block.
-     * Produces an empty step list if the block is present but empty.
-     */
-    static void parseEulerSteps(std::istream& in, VisSession& session,
-                                const HeaderCounts& counts);
 };
 
 #endif // DATA_LOADER_H

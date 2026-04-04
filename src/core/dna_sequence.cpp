@@ -1,6 +1,6 @@
-#include "data_initalization/dna_sequence.h"
+#include "assembler/core/dna_sequence.h"
 
-#include "exceptions/DNASequenceException.h"
+#include "assembler/exceptions/DNASequenceException.h"
 
 // PUBLIC
 

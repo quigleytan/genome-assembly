@@ -1,8 +1,8 @@
-#include "../../include/io/sequence_reader.h"
+#include "assembler/io/sequence_reader.h"
 
 #include <stdexcept>
 
-#include "../../include/construction/kmer_encoding.h"
+#include "assembler/construction/kmer_encoding.h"
 
 std::optional<DNASequence> SequenceReader::readFasta(std::istream& in) {
 

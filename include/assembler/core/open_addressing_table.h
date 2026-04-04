@@ -11,6 +11,7 @@
 
 #include <string>
 #include <vector>
+#include <stdexcept>
 #include <cstdint>
 
 template <typename Key, typename Value>

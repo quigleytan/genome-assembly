@@ -61,7 +61,7 @@ set(CONSTRUCTION_SOURCES
 )
 
 # Executables
-add_assembler_app(ScaffoldAssembly      src/pipelines/scaffold_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/data_exporter.cpp)
+add_assembler_app(ScaffoldAssembly      src/pipelines/scaffold_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/vis_exporter.cpp)
 add_assembler_app(FastaEulerianAssembly src/pipelines/fasta_eulerian_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 add_assembler_app(FastaContigAssembly   src/pipelines/fasta_contig_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 add_assembler_app(FastqContigAssembly   src/pipelines/fastq_contig_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
@@ -75,8 +75,8 @@ add_assembler_app(ConstructionTests     tests/ConstructionTests.cpp ${CORE_SOURC
 add_assembler_app(Visualizer
         src/graphics/gui.cpp
         src/graphics/contig_view.cpp
-        src/graphics/data_exporter.cpp
-        src/graphics/data_loader.cpp
+        src/graphics/vis_exporter.cpp
+        src/graphics/vis_loader.cpp
         ${CORE_SOURCES}
         ${CONSTRUCTION_SOURCES}
 )

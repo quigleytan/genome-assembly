@@ -1,15 +1,16 @@
 #include <fstream>
 #include <iostream>
 
-#include "../data_list.h"
-#include "../data_initalization/dna_sequence.h"
-#include "../data_initalization/sequence_reader.h"
+#include "assembler/core/data_list.h"
+#include "assembler/core/dna_sequence.h"
+#include "assembler/core/kmer_table.h"
+#include "assembler/core/de_bruijn_graph.h"
 
-#include "../encoding/kmer_encoding.h"
-#include "../encoding/kmer_table.h"
+#include "assembler/construction/kmer_encoding.h"
+#include "assembler/construction/contig_assembler.h"
 
-#include "../scaffolding/de_bruijn_graph.h"
-#include "../scaffolding/contig_traversal.h"
+#include "assembler/io/sequence_reader.h"
+
 
 // PIPELINE STAGES
 
@@ -65,7 +66,7 @@ static DeBruijnGraph buildGraph(const std::string& seq, int k, bool circular = f
  * @param sequence Original DNASequence for reference.
  */
 static void assembleContigs(DeBruijnGraph& graph) {
-    ContigTraversal ct(graph);
+    ContigAssembler ct(graph);
     ct.computeContigs();
     ct.printStats();
 }

@@ -2,7 +2,7 @@
  * data_exporter.cpp
  */
 
-#include "../../include/graphics/data_exporter.h"
+#include "assembler/graphics/vis_exporter.h"
 
 #include <fstream>
 #include <iomanip>
@@ -30,10 +30,7 @@ void DataExporter::writeHeader(std::ostream& out, const VisSession& session) {
     out << "SOURCE "          << session.sourceFile                << '\n';
     out << "CONTIG_COUNT "    << session.contigs.size()            << '\n';
     out << "SCAFFOLD_COUNT "  << session.scaffolds.size()          << '\n';
-    out << "NODE_COUNT "      << session.nodes.size()              << '\n';
-    out << "EDGE_COUNT "      << session.edges.size()              << '\n';
     out << "CONTIG_STEPS "    << session.contigSteps.size()        << '\n';
-    out << "EULER_STEPS "     << session.eulerSteps.size()         << '\n';
     out << "GENOME_LENGTH "   << session.genomeSequence.length()   << '\n';
     out << "END_HEADER\n";
 }
@@ -98,37 +95,6 @@ void DataExporter::writeScaffolds(std::ostream& out, const VisSession& session) 
     out << "END_SCAFFOLDS\n";
 }
 
-void DataExporter::writeNodes(std::ostream& out, const VisSession& session) {
-    out << "BEGIN_NODES\n";
-
-    for (const VisNode& n : session.nodes) {
-        out << "NODE "
-            << encodeNodeId(n.id) << ' '
-            << n.inDegree         << ' '
-            << n.outDegree        << ' '
-            << std::fixed << std::setprecision(4)
-            << n.x                << ' '
-            << n.y                << ' '
-            // Label last — may contain any characters
-            << n.label            << '\n';
-    }
-
-    out << "END_NODES\n";
-}
-
-void DataExporter::writeEdges(std::ostream& out, const VisSession& session) {
-    out << "BEGIN_EDGES\n";
-
-    for (const VisEdge& e : session.edges) {
-        out << "EDGE "
-            << encodeNodeId(e.from) << ' '
-            << encodeNodeId(e.to)   << ' '
-            << e.multiplicity       << '\n';
-    }
-
-    out << "END_EDGES\n";
-}
-
 void DataExporter::writeContigSteps(std::ostream& out, const VisSession& session) {
     out << "BEGIN_CONTIG_STEPS\n";
 
@@ -177,23 +143,6 @@ void DataExporter::writeContigSteps(std::ostream& out, const VisSession& session
     out << "END_CONTIG_STEPS\n";
 }
 
-void DataExporter::writeEulerSteps(std::ostream& out, const VisSession& session) {
-    out << "BEGIN_EULER_STEPS\n";
-
-    for (const TraversalStep& step : session.eulerSteps) {
-        if (step.type == TraversalStep::Type::EdgeConsumed) {
-            out << "EDGE_CONSUMED "
-                << encodeNodeId(step.from) << ' '
-                << encodeNodeId(step.to)   << '\n';
-        } else if (step.type == TraversalStep::Type::NodeCommitted) {
-            out << "NODE_COMMITTED "
-                << encodeNodeId(step.from) << '\n';
-        }
-    }
-
-    out << "END_EULER_STEPS\n";
-}
-
 // PUBLIC
 
 void DataExporter::write(const VisSession& session, const std::string& filePath) {
@@ -205,10 +154,7 @@ void DataExporter::write(const VisSession& session, const std::string& filePath)
     writeGenome(out, session);
     writeContigs(out, session);
     writeScaffolds(out, session);
-    writeNodes(out, session);
-    writeEdges(out, session);
     writeContigSteps(out, session);
-    writeEulerSteps(out, session);
 
     if (out.fail())
         throw std::runtime_error("data_exporter: write error on file: " + filePath);

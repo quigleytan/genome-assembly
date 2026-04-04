@@ -2,7 +2,7 @@
  * contig_view.cpp
  */
 
-#include "../../include/graphics/contig_view.h"
+#include "assembler/graphics/contig_view.h"
 
 #include <algorithm>
 #include <cmath>

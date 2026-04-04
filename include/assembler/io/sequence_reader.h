@@ -18,8 +18,8 @@
 #include <istream>
 #include <string>
 
-#include "../core/dna_sequence.h"
-#include "encoding/kmer_table.h"
+#include "assembler/core/dna_sequence.h"
+#include "assembler/core/kmer_table.h"
 
 class SequenceReader {
 

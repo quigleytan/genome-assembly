@@ -1,15 +1,17 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <iomanip>
 
-#include "../data_initalization/dna_sequence.h"
-#include "../data_initalization/sequence_reader.h"
-#include "../encoding/kmer_encoding.h"
-#include "../encoding/kmer_table.h"
-#include "../scaffolding/de_bruijn_graph.h"
-#include "../scaffolding/eulerian_traversal.h"
-#include "data_list.h"
+#include "assembler/core/kmer_table.h"
+#include "assembler/core/de_bruijn_graph.h"
+#include "assembler/core/data_list.h"
+#include "assembler/core/dna_sequence.h"
+
+#include "assembler/construction/kmer_encoding.h"
+#include "assembler/construction/eulerian_assembler.h"
+
+#include "assembler/io/sequence_reader.h"
+
 
 // HELPER FUNCTION
 
@@ -114,7 +116,7 @@ static DeBruijnGraph buildGraph(const std::string& sequence, int k) {
 static std::string assembleGenome(DeBruijnGraph& graph,
                                   const std::string& originalSequence,
                                   int k) {
-    EulerianTraversal eulerianPath(graph);
+    EulerianAssembler eulerianPath(graph);
     eulerianPath.computePath();
 
     std::cout << "Path length:     " << eulerianPath.getPath().size() << " nodes\n";

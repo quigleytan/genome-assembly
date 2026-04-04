@@ -19,9 +19,9 @@
 #include "imgui_impl_opengl3.h"
 
 // Project
-#include "graphics/contig_view.h"
-#include "graphics/data_loader.h"
-#include "../../include/core/vis_data.h"
+#include "assembler/graphics/contig_view.h"
+#include "assembler/graphics/vis_loader.h"
+#include "assembler/core/vis_data.h"
 
 // CONSTANTS
 

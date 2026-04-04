@@ -2,7 +2,7 @@
  * data_loader.cpp
  */
 
-#include "../../include/graphics/data_loader.h"
+#include "assembler/graphics/vis_loader.h"
 
 #include <fstream>
 #include <sstream>
@@ -202,72 +202,6 @@ void DataLoader::parseScaffolds(std::istream& in, VisSession& session,
     }
 }
 
-
-// NODES
-
-
-void DataLoader::parseNodes(std::istream& in, VisSession& session,
-                            const HeaderCounts& counts) {
-    session.nodes.reserve(counts.nodeCount);
-
-    std::string line;
-    std::getline(in, line);
-    if (line != "BEGIN_NODES")
-        throw std::runtime_error("data_loader: expected BEGIN_NODES, got: " + line);
-
-    while (std::getline(in, line)) {
-        if (line == "END_NODES") break;
-        if (line.empty() || line[0] == '#') continue;
-
-        std::istringstream iss(line);
-        std::string key;
-        iss >> key;
-
-        if (key == "NODE") {
-            VisNode n;
-            std::string encoded;
-            iss >> encoded >> n.inDegree >> n.outDegree >> n.x >> n.y;
-            // Label is last — may contain any characters
-            std::getline(iss, n.label);
-            if (!n.label.empty() && n.label[0] == ' ')
-                n.label = n.label.substr(1);
-            n.id = decodeNodeId(encoded);
-            session.nodes.push_back(std::move(n));
-        }
-    }
-}
-
-// EDGES
-
-
-void DataLoader::parseEdges(std::istream& in, VisSession& session,
-                            const HeaderCounts& counts) {
-    session.edges.reserve(counts.edgeCount);
-
-    std::string line;
-    std::getline(in, line);
-    if (line != "BEGIN_EDGES")
-        throw std::runtime_error("data_loader: expected BEGIN_EDGES, got: " + line);
-
-    while (std::getline(in, line)) {
-        if (line == "END_EDGES") break;
-        if (line.empty() || line[0] == '#') continue;
-
-        std::istringstream iss(line);
-        std::string key;
-        iss >> key;
-
-        if (key == "EDGE") {
-            VisEdge e;
-            std::string fromEncoded, toEncoded;
-            iss >> fromEncoded >> toEncoded >> e.multiplicity;
-            e.from = decodeNodeId(fromEncoded);
-            e.to   = decodeNodeId(toEncoded);
-            session.edges.push_back(std::move(e));
-        }
-    }
-}
-
 // CONTIG STEPS
 
 void DataLoader::parseContigSteps(std::istream& in, VisSession& session,
@@ -329,46 +263,6 @@ void DataLoader::parseContigSteps(std::istream& in, VisSession& session,
     }
 }
 
-// EULER STEPS
-
-
-void DataLoader::parseEulerSteps(std::istream& in, VisSession& session,
-                                 const HeaderCounts& counts) {
-    session.eulerSteps.reserve(counts.eulerSteps);
-
-    std::string line;
-    std::getline(in, line);
-    if (line != "BEGIN_EULER_STEPS")
-        throw std::runtime_error("data_loader: expected BEGIN_EULER_STEPS, got: " + line);
-
-    while (std::getline(in, line)) {
-        if (line == "END_EULER_STEPS") break;
-        if (line.empty() || line[0] == '#') continue;
-
-        std::istringstream iss(line);
-        std::string key;
-        iss >> key;
-
-        if (key == "EDGE_CONSUMED") {
-            TraversalStep step;
-            step.type = TraversalStep::Type::EdgeConsumed;
-            std::string fromEncoded, toEncoded;
-            iss >> fromEncoded >> toEncoded;
-            step.from = decodeNodeId(fromEncoded);
-            step.to   = decodeNodeId(toEncoded);
-            session.eulerSteps.push_back(std::move(step));
-
-        } else if (key == "NODE_COMMITTED") {
-            TraversalStep step;
-            step.type = TraversalStep::Type::NodeCommitted;
-            std::string encoded;
-            iss >> encoded;
-            step.from = decodeNodeId(encoded);
-            session.eulerSteps.push_back(std::move(step));
-        }
-    }
-}
-
 // PUBLIC
 
 VisSession DataLoader::load(const std::string& filePath) {
@@ -382,10 +276,7 @@ VisSession DataLoader::load(const std::string& filePath) {
     parseGenome(in, session);
     parseContigs(in, session, counts);
     parseScaffolds(in, session, counts);
-    parseNodes(in, session, counts);
-    parseEdges(in, session, counts);
     parseContigSteps(in, session, counts);
-    parseEulerSteps(in, session, counts);
 
     return session;
 }

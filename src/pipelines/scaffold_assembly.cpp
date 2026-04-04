@@ -3,18 +3,18 @@
 #include <vector>
 #include <string>
 
-#include "../data_list.h"
-#include "../data_initalization/sequence_reader.h"
+#include "assembler/core/kmer_table.h"
+#include "assembler/core/de_bruijn_graph.h"
+#include "assembler/core/vis_data.h"
+#include "assembler/core/recorder.h"
+#include "assembler/core/data_list.h"
 
-#include "../encoding/kmer_table.h"
+#include "assembler/construction/scaffolder.h"
+#include "assembler/construction/contig_assembler.h"
 
-#include "../scaffolding/de_bruijn_graph.h"
-#include "../scaffolding/scaffolder.h"
-#include "../scaffolding/contig_traversal.h"
+#include "assembler/graphics/vis_exporter.h"
 
-#include "../vis_data.h"
-#include "../recorder.h"
-#include "../graphics/data_exporter.h"
+#include "assembler/io/sequence_reader.h"
 
 // CONSTANTS
 
@@ -56,17 +56,17 @@ static DeBruijnGraph buildGraph(const KmerTable& kTable, size_t k) {
 // STAGE 3 — Contig traversal
 
 // Normal pipeline run - no recording
-static std::vector<ContigTraversal::Contig> buildContigs(DeBruijnGraph& graph) {
-    ContigTraversal ct(graph);
+static std::vector<ContigAssembler::Contig> buildContigs(DeBruijnGraph& graph) {
+    ContigAssembler ct(graph);
     ct.computeContigs();
     ct.printStats();
     return ct.getContigs();
 }
 
 // Visualization run - records animation steps into session
-static std::vector<ContigTraversal::Contig> buildContigs(DeBruijnGraph& graph,
+static std::vector<ContigAssembler::Contig> buildContigs(DeBruijnGraph& graph,
                                                           Recorder& recorder) {
-    ContigTraversal ct(graph, &recorder);
+    ContigAssembler ct(graph, &recorder);
     ct.computeContigs();
     ct.printStats();
     return ct.getContigs();
@@ -77,7 +77,7 @@ static std::vector<ContigTraversal::Contig> buildContigs(DeBruijnGraph& graph,
 
 
 static Scaffolder buildScaffolds(
-    const std::vector<ContigTraversal::Contig>& contigs,
+    const std::vector<ContigAssembler::Contig>& contigs,
     const DeBruijnGraph& graph,
     ResolutionStrategy strategy,
     const KmerTable* kTable)
@@ -92,7 +92,7 @@ static Scaffolder buildScaffolds(
 
 static void writeScaffoldFasta(
     const std::vector<Scaffold>& scaffolds,
-    const std::vector<ContigTraversal::Contig>& contigs,
+    const std::vector<ContigAssembler::Contig>& contigs,
     size_t k,
     const std::string& strategyName)
 {
@@ -135,7 +135,7 @@ static void writeScaffoldFasta(
 
 static void writeFullGenomeFasta(
     const std::vector<Scaffold>& scaffolds,
-    const std::vector<ContigTraversal::Contig>& contigs,
+    const std::vector<ContigAssembler::Contig>& contigs,
     const std::string& genomeName,
     const std::string& outputPath)
 {
@@ -168,7 +168,7 @@ static void writeFullGenomeFasta(
 
 
 static void writeVisData(
-    const std::vector<ContigTraversal::Contig>& contigs,
+    const std::vector<ContigAssembler::Contig>& contigs,
     const Scaffolder& scaffolder,
     VisSession& session,
     const std::string& sourcePath,

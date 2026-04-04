@@ -18,7 +18,8 @@
 #define DATA_EXPORTER_H
 
 #include <string>
-#include "../core/vis_data.h"
+
+#include "assembler/core/vis_data.h"
 
 class DataExporter {
 
@@ -73,16 +74,6 @@ private:
     static void writeScaffolds(std::ostream& out, const VisSession& session);
 
     /**
-     * @brief Writes all VisNode entries (phase 2 — may be empty in phase 1).
-     */
-    static void writeNodes(std::ostream& out, const VisSession& session);
-
-    /**
-     * @brief Writes all VisEdge entries (phase 2 — may be empty in phase 1).
-     */
-    static void writeEdges(std::ostream& out, const VisSession& session);
-
-    /**
      * @brief Writes the contig animation step list.
      * Each step is one line. BaseAppended steps are compacted into
      * run-length encoded RUN blocks to keep file size manageable
@@ -90,12 +81,6 @@ private:
      */
     static void writeContigSteps(std::ostream& out, const VisSession& session);
 
-    /**
-     * @brief Writes the Eulerian animation step list (phase 2).
-     * Empty in phase 1 runs but writes the section header so the
-     * loader always finds the block.
-     */
-    static void writeEulerSteps(std::ostream& out, const VisSession& session);
 };
 
 #endif // DATA_EXPORTER_H
