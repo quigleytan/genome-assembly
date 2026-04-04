@@ -168,6 +168,7 @@ static void writeFullGenomeFasta(
 
 
 static void writeVisData(
+    const std::vector<ContigTraversal::Contig>& contigs,
     const ContigScaffolder& scaffolder,
     VisSession& session,
     const std::string& sourcePath,
@@ -179,10 +180,21 @@ static void writeVisData(
     session.sourceFile   = sourcePath;
     session.strategyName = strategyName;
 
+    std::string genome;
+    for (size_t i = 0; i < scaffolder.getScaffolds().size(); ++i) {
+        for (const auto& entry : scaffolder.getScaffolds()[i].entries)
+            genome += contigs[entry.contigIndex].sequence;
+        if (i + 1 < scaffolder.getScaffolds().size())
+            genome += std::string(INTER_SCAFFOLD_NS, 'N');
+    }
+    session.genomeSequence = std::move(genome);
+
     scaffolder.toVisSession(session, k - 1);
 
     const std::string visPath =
         "../Data/Results/assembly_k" + std::to_string(k) + "_" + strategyName + ".visdata";
+
+
 
     DataExporter::write(session, visPath);
 
@@ -262,7 +274,7 @@ int main() {
 
         // Write .visdata — populates session metadata and contig/scaffold
         // structs, then serializes the whole session to disk
-        writeVisData(scaffolder, session, path, primaryStrategy, primaryK);
+        writeVisData(contigs, scaffolder, session, path, primaryStrategy, primaryK);
 
     } catch (const std::exception& e) {
         std::cout << "Error: " << e.what() << "\n";

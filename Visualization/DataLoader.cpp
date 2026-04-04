@@ -68,7 +68,8 @@ DataLoader::HeaderCounts DataLoader::parseHeader(std::istream& in, VisSession& s
             if (!session.sourceFile.empty() && session.sourceFile[0] == ' ')
                 session.sourceFile = session.sourceFile.substr(1);
 
-        } else if (key == "CONTIG_COUNT")   { iss >> counts.contigCount;   }
+        } else if (key == "GENOME_LENGTH") { iss >> counts.genomeLength; }
+        else if (key == "CONTIG_COUNT")   { iss >> counts.contigCount;   }
         else if (key == "SCAFFOLD_COUNT")   { iss >> counts.scaffoldCount; }
         else if (key == "NODE_COUNT")       { iss >> counts.nodeCount;     }
         else if (key == "EDGE_COUNT")       { iss >> counts.edgeCount;     }
@@ -78,6 +79,23 @@ DataLoader::HeaderCounts DataLoader::parseHeader(std::istream& in, VisSession& s
     }
 
     return counts;
+}
+
+// SEQUENCE
+
+void DataLoader::parseGenome(std::istream& in, VisSession& session) {
+    std::string line;
+    std::getline(in, line);
+    if (line != "BEGIN_GENOME")
+        throw std::runtime_error("DataLoader: expected BEGIN_GENOME, got: " + line);
+
+    // Read the genome sequence — single line
+    std::getline(in, session.genomeSequence);
+
+    // Consume END_GENOME
+    std::getline(in, line);
+    if (line != "END_GENOME")
+        throw std::runtime_error("DataLoader: expected END_GENOME, got: " + line);
 }
 
 // CONTIGS
@@ -361,6 +379,7 @@ VisSession DataLoader::load(const std::string& filePath) {
     VisSession session;
 
     HeaderCounts counts = parseHeader(in, session);
+    parseGenome(in, session);
     parseContigs(in, session, counts);
     parseScaffolds(in, session, counts);
     parseNodes(in, session, counts);

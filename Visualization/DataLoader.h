@@ -58,9 +58,11 @@ private:
         size_t edgeCount     = 0;
         size_t contigSteps   = 0;
         size_t eulerSteps    = 0;
+        size_t genomeLength  = 0;
     };
     static HeaderCounts parseHeader(std::istream& in, VisSession& session);
 
+    static void parseGenome(std::istream& in, VisSession& session);
     /**
      * @brief Parses the BEGIN_CONTIGS ... END_CONTIGS block.
      */

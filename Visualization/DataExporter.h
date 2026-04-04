@@ -53,6 +53,7 @@ private:
      */
     static void writeHeader(std::ostream& out, const VisSession& session);
 
+    static void writeGenome(std::ostream& out, const VisSession& session);
     /**
      * @brief Writes all VisContig entries.
      * Format per contig:

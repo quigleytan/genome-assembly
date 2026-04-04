@@ -27,7 +27,6 @@ void DataExporter::writeHeader(std::ostream& out, const VisSession& session) {
     out << "VISDATA_VERSION " << FORMAT_VERSION                    << '\n';
     out << "K "               << session.k                         << '\n';
     out << "STRATEGY "        << session.strategyName              << '\n';
-    // SOURCE is always last on its line — may contain spaces
     out << "SOURCE "          << session.sourceFile                << '\n';
     out << "CONTIG_COUNT "    << session.contigs.size()            << '\n';
     out << "SCAFFOLD_COUNT "  << session.scaffolds.size()          << '\n';
@@ -35,7 +34,14 @@ void DataExporter::writeHeader(std::ostream& out, const VisSession& session) {
     out << "EDGE_COUNT "      << session.edges.size()              << '\n';
     out << "CONTIG_STEPS "    << session.contigSteps.size()        << '\n';
     out << "EULER_STEPS "     << session.eulerSteps.size()         << '\n';
+    out << "GENOME_LENGTH "   << session.genomeSequence.length()   << '\n';
     out << "END_HEADER\n";
+}
+
+void DataExporter::writeGenome(std::ostream& out, const VisSession& session) {
+    out << "BEGIN_GENOME " << '\n';
+    out << session.genomeSequence << '\n';
+    out << "END_GENOME\n";
 }
 
 void DataExporter::writeContigs(std::ostream& out, const VisSession& session) {
@@ -196,6 +202,7 @@ void DataExporter::write(const VisSession& session, const std::string& filePath)
         throw std::runtime_error("DataExporter: could not open file for writing: " + filePath);
 
     writeHeader(out, session);
+    writeGenome(out, session);
     writeContigs(out, session);
     writeScaffolds(out, session);
     writeNodes(out, session);

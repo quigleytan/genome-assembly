@@ -91,6 +91,7 @@ struct VisSession {
     size_t      k = 0;
     std::string sourceFile;   // Path to the FASTA/FASTQ file used
     std::string strategyName; // "skip", "greedy", "scored", or "eulerian"
+    std::string genomeSequence; // Reconstructed genome sequence
 
     // Contig and scaffold data (phase 1)
     std::vector<VisContig>   contigs;

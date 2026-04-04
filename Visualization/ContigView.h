@@ -97,9 +97,29 @@ private:
     static constexpr float GAP_BAR_WIDTH = 10.0f;  // Width of unknown-gap indicator
     static constexpr float DETAIL_WIDTH_FRACTION = 0.30f; // Detail panel takes 30% of window
 
+    // Genome map tab state
+    static constexpr float CELL_WIDTH     = 10.0f;  // px per base character
+    static constexpr float CELL_HEIGHT    = 18.0f;  // px per row
+    static constexpr int   BASES_PER_ROW  = 60;     // wraps at 60 chars like FASTA
+
+    // Segment lookup - maps character position to scaffold or gap index
+    struct GenomeSegment {
+        enum class Type { Scaffold, Gap };
+        Type   type;
+        size_t index;        // scaffold index or gap index
+        size_t startPos;     // position in genomeSequence
+        size_t length;
+    };
+    std::vector<GenomeSegment> genomeSegments_; // built in buildDisplayData()
+    int selectedSegment_ = -1;                  // -1 = none
+
+    // Sub-renderer added in phase 2 for genome map tab
+    void renderAnimationTab();
+    void renderGenomeMapTab();
+    void buildGenomeSegments();
     // PRECOMPUTED DATA
 
-    size_t maxContigLength_ = 1; // Longest contig — denominator for bar widths
+    size_t maxContigLength_ = 1; // Longest contig - denominator for bar widths
 
     // PRIVATE METHODS
 
