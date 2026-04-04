@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "vis_data.h"
+#include "assembler/core/vis_data.h"
 
 class Recorder {
 

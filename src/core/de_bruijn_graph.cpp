@@ -1,5 +1,5 @@
-#include "de_bruijn_graph.h"
-#include "encoding/kmer_encoding.h"
+#include "assembler/core/de_bruijn_graph.h"
+#include "assembler/construction/kmer_encoding.h"
 
 // PRIVATE HELPER FUNCTION
 
