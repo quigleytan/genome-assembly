@@ -153,7 +153,7 @@ target_include_directories(ConstructionTests PRIVATE ${PROJECT_INCLUDE_DIR})
 add_executable(Visualizer
         src/graphics/gui.cpp
         src/graphics/contig_view.cpp
-        include/graphics/GraphView.cpp
+        include/assembler/graphics/GraphView.cpp
         src/graphics/data_exporter.cpp
         src/graphics/data_loader.cpp
         src/core/dna_sequence.cpp
