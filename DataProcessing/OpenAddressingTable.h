@@ -4,9 +4,6 @@
  * - General linear probing hash table.
  * Important notes:
  * - Find and insert return a pointer to the item.
- * TODO items for future work;
- * Currently uses modulo hashing; can be replaced with a
- * stronger mixing function if needed.
  */
 
 #ifndef OPEN_ADDRESSING_TABLE_H
@@ -34,6 +31,17 @@ protected:
     size_t numItems; // Number of items in the table
     std::vector<Item> items;
 
+    /**
+     * @brief Computes a hash value for the given key.
+     *
+     * For __uint128_t inputs, the key is split into high and low 64-bit halves, each
+     * mixed with bitwise operations and multipliers to reduce collisions.
+     * For other key types, `std::hash` is used. The result is modulo the table size.
+     *
+     * @tparam Key Type of the key.
+     * @param key  Key to hash.
+     * @return Hash value in the range [0, table size).
+     */
     virtual size_t hashKey(const Key& key) const {
         if constexpr (std::is_same_v<Key, __uint128_t>) {
             uint64_t lo = static_cast<uint64_t>(key);
@@ -53,7 +61,8 @@ protected:
     }
 
     /**
-     * @brief Raw insert used only during rehashing.
+     * @brief Raw insert method for rehashing.
+     *
      * Bypasses onInitial and onDuplicate hooks entirely.
      * Assumes the key does not already exist in the table.
      */
@@ -92,7 +101,7 @@ protected:
     // HOOK FUNCTIONS FOR KmerTable
 
     /**
-     * @brief Exists to be overridden for kmer increment
+     * @brief Exists to be overridden for kmer increment.
      * @param value
      */
     virtual void onDuplicate(Value& value) {
@@ -100,7 +109,7 @@ protected:
     }
 
     /**
-     * @brief Exists to be overridden for initial kmer insertion
+     * @brief Exists to be overridden for initial kmer insertion.
      * @param value
      */
     virtual void onInitial(Value& value) {
@@ -110,7 +119,7 @@ protected:
     /**
      * @brief Finds the next prime number greater than or equal to n
      * @param n Starting integer to find the next prime
-     * @return Next prime number
+     * @return The next prime number.
      */
     static size_t nextPrime(size_t n) {
         auto isPrime = [](int x) {
@@ -126,6 +135,45 @@ protected:
 public:
 
     class iterator {
+
+        public:
+            /**
+             * @brief Constructor for an iterator that allows for simple and complete scanning of the table.
+             * @param inputTable Input table to be iterated through.
+             * @param inputIndex The index to start iteration at.
+             */
+            iterator(const OpenAddressingTable* inputTable, size_t inputIndex)
+                : table(inputTable), index(inputIndex) {
+                advanceToNextValid();
+            }
+
+            /**
+             * @brief Advances the iterator to the next occupied item.
+             * @return Reference to the updated iterator.
+             */
+            iterator& operator++() {
+                ++index;
+                advanceToNextValid();
+                return *this;
+            }
+
+            /**
+             * @brief Compares two iterators for inequality.
+             * @param other Iterator to compare against.
+             * @return True if the iterators refer to different positions.
+             */
+            bool operator!=(const iterator& other) const {
+                return index != other.index;
+            }
+
+            /**
+             * @brief Returns the item at the current iterator position.
+             * @return Reference to the current item.
+             */
+            const Item& operator*() const {
+                return table->items[index];
+            }
+
         private:
             const OpenAddressingTable* table;
             size_t index;
@@ -140,59 +188,19 @@ public:
                 }
             }
 
-        public:
-            /**
-             * @brief Constructor for an iterator that allows for simple and complete scanning of the table.
-             * @param inputTable Input table to be iterated through.
-             * @param inputIndex The index to start iteration at.
-             */
-            iterator(const OpenAddressingTable* inputTable, size_t inputIndex)
-                : table(inputTable), index(inputIndex) {
-                advanceToNextValid();
-            }
-
-            /**
-             * @brief Overload the ++ operator to advance through the vector.
-             *
-             * Skips empty items, returns a pointer to the next occupied item.
-             *
-             * @return
-             */
-            iterator& operator++() {
-                ++index;
-                advanceToNextValid();
-                return *this;
-            }
-
-            /**
-             * @brief Used in while loops to terminate once the whole table is accessed.
-             * @param other The other integer being compared.
-             * @return Returns a boolean, true if they are not equal.
-             */
-            bool operator!=(const iterator& other) const {
-                return index != other.index;
-            }
-
-            /**
-             * @brief Used to access a specific item in the table based on the class index.
-             * @return Returns a reference to an item.
-             */
-            const Item& operator*() const {
-                return table->items[index];
-            }
         };
 
         /**
-         * @brief
-         * @return
+         * @brief Returns an iterator to the first occupied table entry.
+         * @return Iterator to the beginning of the table.
          */
         iterator begin() const {
             return iterator(this, 0);
         }
 
         /**
-         * @brief
-         * @return Returns an iterator object.
+         * @brief Returns an iterator one past the end of the table.
+         * @return Iterator representing the end position.
          */
         iterator end() const {
             return iterator(this, items.size());

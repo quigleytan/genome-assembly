@@ -182,8 +182,8 @@ private:
     /**
      * @brief Renders the detail panel (right side).
      * Shows metadata for selectedContig_, or a placeholder if none are selected.
-     * @param panelWidth  Width of the detail panel.
-     * @param availHeight Height available.
+     * @param panelWidth   Width of the detail panel.
+     * @param availHeight  Height available.
      */
     void renderDetailPanel(float panelWidth, float availHeight);
 

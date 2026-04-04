@@ -66,8 +66,8 @@ set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})
 # ASSEMBLY EXECUTABLES
 
 add_executable(FullReconstruction
-        GenomeConstruction/GapEstimation.cpp
-        GenomeConstruction/GapFilling.cpp
+        GapResolution/GapEstimation.cpp
+        GapResolution/GapFilling.cpp
 )
 
 set(PROJECT_INCLUDE_DIR ${CMAKE_SOURCE_DIR})

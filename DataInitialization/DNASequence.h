@@ -19,34 +19,6 @@
 
 class DNASequence {
 
-private:
-
-    std::string name_;
-    std::string sequence_;
-    std::string complementSequence_;
-    int gcTotal_;
-    double gcPercent_;
-    size_t length_; // # of bases
-
-    // Struct to allow for a single loop data analysis without modifying
-    // members outside the constructor.
-    struct AnalysisResult {
-        std::string complementSequence_; // complement sequence
-        int gcTotal_;                    // number of G/C bases
-        double gcPercent_;               // percentage of G/C
-    };
-
-    /**
-     * @brief Computes basic sequence data
-     *
-     * Creates the complement, G/C counts, and percentage in a single pass through the input sequence.
-     * Used only in the constructor.
-     *
-     * @param inputSequence Sequence passed in through the constructor.
-     * @return AnalysisResult Struct containing the complement, gcTotal, and gcPercent.
-     */
-    static AnalysisResult analyzeSequence(const std::string& inputSequence);
-
 public:
 
     /**
@@ -55,8 +27,8 @@ public:
      * Takes the name and string of bases to create a DNASequence object.
      * The sequence is analyzed for its complement, GC count percentage.
      *
-     * @param name Name of the sequence derived from a data file.
      * @param inputSequence String of char's to be analyzed and stored.
+     * @param name          Name of the sequence derived from a data file.
      */
     DNASequence(const std::string& name, const std::string& inputSequence);
 
@@ -100,6 +72,34 @@ public:
     friend bool operator == (const DNASequence &sequenceOne, const DNASequence &sequenceTwo);
 
     friend bool operator != (const DNASequence &sequenceOne, const DNASequence &sequenceTwo);
+
+private:
+
+    std::string name_;
+    std::string sequence_;
+    std::string complementSequence_;
+    int gcTotal_;
+    double gcPercent_;
+    size_t length_; // # of bases
+
+    // Struct to allow for a single loop data analysis without modifying
+    // members outside the constructor.
+    struct AnalysisResult {
+        std::string complementSequence_; // Complement sequence
+        int gcTotal_;                    // Number of G/C bases
+        double gcPercent_;               // Percentage of G/C
+    };
+
+    /**
+     * @brief Computes basic sequence data
+     *
+     * Creates the complement, G/C counts, and percentage in a single pass through the input sequence.
+     * Used only in the constructor.
+     *
+     * @param inputSequence Sequence passed in through the constructor.
+     * @return AnalysisResult Struct containing the complement, gcTotal, and gcPercent.
+     */
+    static AnalysisResult analyzeSequence(const std::string& inputSequence);
 
 };
 

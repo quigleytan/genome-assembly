@@ -3,15 +3,12 @@
  * Summary:
  * - Fixed-size open addressing hash table used to count unique k-mers in
  *   DNA sequences.
- * - Uses quadratic probing for collision resolution and flexible size initialization
+ * - Uses linear probing for collision resolution and flexible size initialization
  *   to minimize collisions and ensure reasonable allocation.
  * Important notes:
  * - Uses 2-bit encoding for kmers, functions as the key and the kmer identity.
  * - Stores number of instances as size_t.
  * - Based functions off of OpenAddressing from CS 2240 Project 5.
- * TODO items for future work;
- * Currently uses modulo hashing; can be replaced with a
- * stronger mixing function if needed.
  */
 
 #ifndef KMER_TABLE_H
@@ -27,9 +24,44 @@
 
 class KmerTable : public OpenAddressingTable<NodeId, size_t> {
 
+public:
+
+    /**
+     * @brief Constructor for QuadraticProbingTable.
+     *
+     * Uses the length of the input sequence and k to decide between the physical and
+     * combinational limits of unique kmers using: min(4^k, dnaLength - k + 1).
+     *
+     * Ensures the max load is < 0.5 by initializing table size to the
+     * next prime > 2 * maxUnique.
+     *
+     * @param dnaLength Length of the DNA sequence (bases).
+     * @param k         Desired k-mer size (bases).
+     */
+    KmerTable(size_t dnaLength, size_t k) {
+        if (k > dnaLength) {
+            items.resize(nextPrime(1));
+            numItems = 0;
+            return;
+        }
+        size_t maxPossible = (k >= 32) ? SIZE_MAX : (size_t(1) << (2 * k));
+        size_t maxUnique = std::min(maxPossible, dnaLength - k + 1);
+        size_t tableSize = (maxUnique > SIZE_MAX / 2) ? nextPrime(maxUnique) : nextPrime(2 * maxUnique);
+        items.resize(tableSize);
+        numItems = 0;
+        this->k = k;
+    }
+
+    /**
+     * @breif Getter method for k.
+     * @return k The kmer size for this table.
+     */
+    [[nodiscard]] size_t getK() const {
+        return k;
+    }
+
 protected:
 
-    // K-mer K size
     size_t k;
 
     /**
@@ -54,9 +86,8 @@ protected:
      * @param value Reference to the value associated with a duplicate key.
      */
     void onDuplicate(size_t &value) override {
-        value++; //increments the kmer count
+        value++; // Increment count for duplicate k-mer
     }
-
 
     /**
      * @brief onInitial overridden method.
@@ -70,39 +101,5 @@ protected:
         value = 1;
     }
 
-public:
-
-    /**
-     * @brief Constructor for QuadraticProbingTable.
-     *
-     * Uses the length of the input sequence and k to decide between the physical and
-     * combinational limits of unique kmers using: min(4^k, dnaLength - k + 1).
-     *
-     * Ensures the max load is < 0.5 by initializing table size to next prime > 2 * maxUnique.
-     *
-     * @param dnaLength Length of the DNA sequence (bases).
-     * @param k Desired k-mer size (bases).
-     */
-    KmerTable(size_t dnaLength, size_t k) {
-        if (k > dnaLength) {
-            items.resize(nextPrime(1));
-            numItems = 0;
-            return;
-        }
-        size_t maxPossible = (k >= 32) ? SIZE_MAX : (size_t(1) << (2 * k));
-        size_t maxUnique = std::min(maxPossible, dnaLength - k + 1);
-        size_t tableSize = (maxUnique > SIZE_MAX / 2) ? nextPrime(maxUnique) : nextPrime(2 * maxUnique);
-        items.resize(tableSize);
-        numItems = 0;
-        this->k = k;
-    }
-
-    /**
-     * @breif Getter method for k.
-     * @return k The kmer size for this table.
-     */
-    [[nodiscard]] size_t getK() const {
-        return k;
-    }
 };
 #endif //KMER_TABLE_H

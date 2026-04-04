@@ -22,15 +22,6 @@
 
 class KmerEncoding {
 
-private:
-
-    /**
-     * @brief Encodes a single DNA base into its corresponding 2-bit representation.
-     * @param base Char input value of a single base.
-     * @return 2-bit value as __uint128_t.
-     */
-    static NodeId encodeBase(char base);
-
 public:
 
     static constexpr size_t MAX_K_128 = 63;
@@ -43,7 +34,7 @@ public:
      *
      * @param prev 2-bit encoded previous kmer as __uint128_t.
      * @param next Char input value of the next base to add.
-     * @param k Set k-mer length to use when rolling.
+     * @param k    Set k-mer length to use when rolling.
      *
      * @return 2-bit encoded next kmer as __uint128_t.
      */
@@ -91,7 +82,7 @@ public:
      * Only for use with user interaction, keep everything encoded in logical implementation.
      *
      * @param kmer 2-bit encoded kmer as __uint128_t.
-     * @param k The length of the k-mer.
+     * @param k    The length of the k-mer.
      * @return Equivalent string representation.
      */
     static std::string decode(NodeId kmer, size_t k);
@@ -102,11 +93,20 @@ public:
      * Encodes and rolls through the DNA sequence to extract all k-mers, inserting them into the provided KmerTable.
      * This generates counts and allows analyzing k-mer frequency in the sequence.
      *
-     * @param dna DNA sequence string to extract k-mers from.
-     * @param k K-mer size to use for encoding.
+     * @param dna   DNA sequence string to extract k-mers from.
+     * @param k     K-mer size to use for encoding.
      * @param table Table to populate with encoded k-mers.
      */
     static void encodeSequence(const std::string& dna, size_t k, KmerTable& table);
+
+private:
+
+    /**
+     * @brief Encodes a single DNA base into its corresponding 2-bit representation.
+     * @param base Char input value of a single base.
+     * @return 2-bit value as __uint128_t.
+     */
+    static NodeId encodeBase(char base);
 
 };
 #endif //KMER_ENCODER_H

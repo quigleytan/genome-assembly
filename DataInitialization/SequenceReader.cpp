@@ -64,7 +64,6 @@ std::optional<DNASequence> SequenceReader::readFastq(std::istream& in) {
     return DNASequence(header, sequence);
 }
 
-// In SequenceReader.cpp
 void SequenceReader::encodeAllReads(std::istream& in, size_t k, KmerTable& table) {
     size_t readCount = 0;
 

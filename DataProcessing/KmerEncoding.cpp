@@ -4,20 +4,6 @@
 
 #include "CustomExceptions/DNASequenceException.h"
 
-
-// PRIVATE
-
-NodeId KmerEncoding::encodeBase(char base) {
-    // Assigning 2-bit values to each base
-    switch (base) {
-        case 'A': return 0b00;
-        case 'C': return 0b01;
-        case 'G': return 0b10;
-        case 'T': return 0b11;
-        default: throw DNASequenceException("Invalid base");
-    }
-}
-
 // PUBLIC
 
 // Rolls the previous k-mer to get the next one
@@ -80,5 +66,18 @@ void KmerEncoding::encodeSequence(const std::string &dna, size_t k, KmerTable &t
     for (size_t i = k; i < dna.length(); ++i) {
         kmer = roll(kmer, dna[i], k);
         table.insert(kmer);
+    }
+}
+
+// PRIVATE
+
+NodeId KmerEncoding::encodeBase(char base) {
+    // Assigning 2-bit values to each base
+    switch (base) {
+        case 'A': return 0b00;
+        case 'C': return 0b01;
+        case 'G': return 0b10;
+        case 'T': return 0b11;
+        default: throw DNASequenceException("Invalid base");
     }
 }

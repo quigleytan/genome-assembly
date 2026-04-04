@@ -39,6 +39,12 @@ public:
      */
     static std::optional<DNASequence> readFastq(std::istream& in);
 
+    /**
+     * @breif Reads all sequences from a FASTQ stream and encodes k-mers into the provided table.
+     * @param in    Input stream to be read from.
+     * @param k     Length of k-mers to be encoded.
+     * @param table Table used to store k-mers.
+     */
     static void encodeAllReads(std::istream& in, size_t k, KmerTable& table);
 
 };
