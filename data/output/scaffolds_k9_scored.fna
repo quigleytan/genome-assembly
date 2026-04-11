@@ -1,6 +1,0 @@
->Scaffold_1 contigs=3 strategy=scored k=9
-ACGTACGTACGTACGTACGTACGTACC
->Scaffold_2 contigs=1 strategy=scored k=9
-TTGGAACCTTGG
->Scaffold_3 contigs=1 strategy=scored k=9
-CGTACGTAC

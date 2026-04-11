@@ -19,7 +19,7 @@
 #include <string>
 #include "assembler/core/vis_data.h"
 
-class DataLoader {
+class VisLoader {
 
 public:
 

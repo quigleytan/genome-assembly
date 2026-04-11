@@ -16,12 +16,11 @@
 
 #ifndef DATA_EXPORTER_H
 #define DATA_EXPORTER_H
-
 #include <string>
 
 #include "assembler/core/vis_data.h"
 
-class DataExporter {
+class VisExporter {
 
 public:
 

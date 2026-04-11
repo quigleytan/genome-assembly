@@ -97,7 +97,7 @@ static void writeScaffoldFasta(
     const std::string& strategyName)
 {
     const std::string filename =
-        "../Data/Results/scaffolds_k" + std::to_string(k) + "_" + strategyName + ".fna";
+        "../data/output/scaffolds_k" + std::to_string(k) + "_" + strategyName + ".fna";
 
     std::ofstream out(filename);
     if (!out.is_open())
@@ -192,11 +192,11 @@ static void writeVisData(
     scaffolder.toVisSession(session, k - 1);
 
     const std::string visPath =
-        "../Data/Results/assembly_k" + std::to_string(k) + "_" + strategyName + ".visdata";
+        "../data/graphical/assembly_k" + std::to_string(k) + "_" + strategyName + ".visdata";
 
 
 
-    DataExporter::write(session, visPath);
+    VisExporter::write(session, visPath);
 
     std::cout << "\nVisualization data written to: " << visPath << "\n";
     std::cout << "Launch with: Visualizer.exe " << visPath << "\n";
@@ -206,12 +206,12 @@ static void writeVisData(
 
 int main() {
     try {
-        const std::string path           = "../Data/" + sequence[7];
+        const std::string path           = "../data/genomic/" + sequence[7];
         const size_t estimatedTotalBases = 100000;
 
         // Phase 1
 
-        const std::vector<size_t> kValues = { 4 };
+        const std::vector<size_t> kValues = { 6 };
 
         const std::vector<std::pair<ResolutionStrategy, std::string>> strategies = {
             { ResolutionStrategy::skip(),   "skip"   },
@@ -270,7 +270,7 @@ int main() {
         writeFullGenomeFasta(
             scaffolder.getScaffolds(), contigs,
             "Escherichia_pseudo_genome",
-            "../Data/Results/full_reconstructed_genome.fna");
+            "../data/output/full_reconstructed_genome.fna");
 
         // Write .visdata — populates session metadata and contig/scaffold
         // structs, then serializes the whole session to disk

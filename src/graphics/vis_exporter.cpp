@@ -1,6 +1,3 @@
-/*
- * data_exporter.cpp
- */
 
 #include "assembler/graphics/vis_exporter.h"
 
@@ -11,7 +8,7 @@
 
 // PRIVATE HELPERS
 
-std::string DataExporter::encodeNodeId(NodeId id) {
+std::string VisExporter::encodeNodeId(NodeId id) {
     // Split __uint128_t into high and low uint64_t halves
     uint64_t hi = static_cast<uint64_t>(id >> 64);
     uint64_t lo = static_cast<uint64_t>(id);
@@ -23,7 +20,7 @@ std::string DataExporter::encodeNodeId(NodeId id) {
     return oss.str();
 }
 
-void DataExporter::writeHeader(std::ostream& out, const VisSession& session) {
+void VisExporter::writeHeader(std::ostream& out, const VisSession& session) {
     out << "VISDATA_VERSION " << FORMAT_VERSION                    << '\n';
     out << "K "               << session.k                         << '\n';
     out << "STRATEGY "        << session.strategyName              << '\n';
@@ -35,13 +32,13 @@ void DataExporter::writeHeader(std::ostream& out, const VisSession& session) {
     out << "END_HEADER\n";
 }
 
-void DataExporter::writeGenome(std::ostream& out, const VisSession& session) {
-    out << "BEGIN_GENOME " << '\n';
+void VisExporter::writeGenome(std::ostream& out, const VisSession& session) {
+    out << "BEGIN_GENOME\n";
     out << session.genomeSequence << '\n';
     out << "END_GENOME\n";
 }
 
-void DataExporter::writeContigs(std::ostream& out, const VisSession& session) {
+void VisExporter::writeContigs(std::ostream& out, const VisSession& session) {
     out << "BEGIN_CONTIGS\n";
 
     for (size_t i = 0; i < session.contigs.size(); ++i) {
@@ -68,7 +65,7 @@ void DataExporter::writeContigs(std::ostream& out, const VisSession& session) {
     out << "END_CONTIGS\n";
 }
 
-void DataExporter::writeScaffolds(std::ostream& out, const VisSession& session) {
+void VisExporter::writeScaffolds(std::ostream& out, const VisSession& session) {
     out << "BEGIN_SCAFFOLDS\n";
 
     for (size_t i = 0; i < session.scaffolds.size(); ++i) {
@@ -95,7 +92,7 @@ void DataExporter::writeScaffolds(std::ostream& out, const VisSession& session) 
     out << "END_SCAFFOLDS\n";
 }
 
-void DataExporter::writeContigSteps(std::ostream& out, const VisSession& session) {
+void VisExporter::writeContigSteps(std::ostream& out, const VisSession& session) {
     out << "BEGIN_CONTIG_STEPS\n";
 
     // Run-length encode consecutive BaseAppended steps for the same contig.
@@ -145,7 +142,7 @@ void DataExporter::writeContigSteps(std::ostream& out, const VisSession& session
 
 // PUBLIC
 
-void DataExporter::write(const VisSession& session, const std::string& filePath) {
+void VisExporter::write(const VisSession& session, const std::string& filePath) {
     std::ofstream out(filePath);
     if (!out.is_open())
         throw std::runtime_error("data_exporter: could not open file for writing: " + filePath);

@@ -1,5 +1,5 @@
 /*
- * data_loader.cpp
+ * vis_loader.cpp
  */
 
 #include "assembler/graphics/vis_loader.h"
@@ -11,11 +11,11 @@
 
 // PRIVATE HELPERS
 
-NodeId DataLoader::decodeNodeId(const std::string& encoded) {
+NodeId VisLoader::decodeNodeId(const std::string& encoded) {
     // Expected format: "XXXXXXXXXXXXXXXX:YYYYYYYYYYYYYYYY" (16 hex chars each)
     size_t colon = encoded.find(':');
     if (colon == std::string::npos)
-        throw std::runtime_error("data_loader: malformed NodeId (no colon): " + encoded);
+        throw std::runtime_error("vis_loader: malformed NodeId (no colon): " + encoded);
 
     std::string hiStr = encoded.substr(0, colon);
     std::string loStr = encoded.substr(colon + 1);
@@ -25,7 +25,7 @@ NodeId DataLoader::decodeNodeId(const std::string& encoded) {
         hi = std::stoull(hiStr, nullptr, 16);
         lo = std::stoull(loStr, nullptr, 16);
     } catch (const std::exception&) {
-        throw std::runtime_error("data_loader: malformed NodeId hex value: " + encoded);
+        throw std::runtime_error("vis_loader: malformed NodeId hex value: " + encoded);
     }
 
     return (static_cast<NodeId>(hi) << 64) | static_cast<NodeId>(lo);
@@ -34,7 +34,7 @@ NodeId DataLoader::decodeNodeId(const std::string& encoded) {
 
 // HEADER
 
-DataLoader::HeaderCounts DataLoader::parseHeader(std::istream& in, VisSession& session) {
+VisLoader::HeaderCounts VisLoader::parseHeader(std::istream& in, VisSession& session) {
     HeaderCounts counts;
     std::string line;
 
@@ -51,7 +51,7 @@ DataLoader::HeaderCounts DataLoader::parseHeader(std::istream& in, VisSession& s
             iss >> version;
             if (version != FORMAT_VERSION)
                 throw std::runtime_error(
-                    "data_loader: incompatible file version " +
+                    "vis_loader: incompatible file version " +
                     std::to_string(version) +
                     " (expected " + std::to_string(FORMAT_VERSION) + ")");
 
@@ -83,11 +83,11 @@ DataLoader::HeaderCounts DataLoader::parseHeader(std::istream& in, VisSession& s
 
 // SEQUENCE
 
-void DataLoader::parseGenome(std::istream& in, VisSession& session) {
+void VisLoader::parseGenome(std::istream& in, VisSession& session) {
     std::string line;
     std::getline(in, line);
     if (line != "BEGIN_GENOME")
-        throw std::runtime_error("data_loader: expected BEGIN_GENOME, got: " + line);
+        throw std::runtime_error("vis_loader: expected BEGIN_GENOME, got: " + line);
 
     // Read the genome sequence — single line
     std::getline(in, session.genomeSequence);
@@ -95,13 +95,13 @@ void DataLoader::parseGenome(std::istream& in, VisSession& session) {
     // Consume END_GENOME
     std::getline(in, line);
     if (line != "END_GENOME")
-        throw std::runtime_error("data_loader: expected END_GENOME, got: " + line);
+        throw std::runtime_error("vis_loader: expected END_GENOME, got: " + line);
 }
 
 // CONTIGS
 
 
-void DataLoader::parseContigs(std::istream& in, VisSession& session,
+void VisLoader::parseContigs(std::istream& in, VisSession& session,
                               const HeaderCounts& counts) {
     session.contigs.reserve(counts.contigCount);
 
@@ -109,7 +109,7 @@ void DataLoader::parseContigs(std::istream& in, VisSession& session,
     // Consume BEGIN_CONTIGS line
     std::getline(in, line);
     if (line != "BEGIN_CONTIGS")
-        throw std::runtime_error("data_loader: expected BEGIN_CONTIGS, got: " + line);
+        throw std::runtime_error("vis_loader: expected BEGIN_CONTIGS, got: " + line);
 
     while (std::getline(in, line)) {
         if (line == "END_CONTIGS") break;
@@ -139,7 +139,7 @@ void DataLoader::parseContigs(std::istream& in, VisSession& session,
             std::getline(in, seqLine);
             if (seqLine.substr(0, 4) != "SEQ ")
                 throw std::runtime_error(
-                    "data_loader: expected SEQ after CONTIG " +
+                    "vis_loader: expected SEQ after CONTIG " +
                     std::to_string(index));
             c.sequence = seqLine.substr(4);
 
@@ -151,14 +151,14 @@ void DataLoader::parseContigs(std::istream& in, VisSession& session,
 
 // SCAFFOLDS
 
-void DataLoader::parseScaffolds(std::istream& in, VisSession& session,
+void VisLoader::parseScaffolds(std::istream& in, VisSession& session,
                                 const HeaderCounts& counts) {
     session.scaffolds.reserve(counts.scaffoldCount);
 
     std::string line;
     std::getline(in, line);
     if (line != "BEGIN_SCAFFOLDS")
-        throw std::runtime_error("data_loader: expected BEGIN_SCAFFOLDS, got: " + line);
+        throw std::runtime_error("vis_loader: expected BEGIN_SCAFFOLDS, got: " + line);
 
     while (std::getline(in, line)) {
         if (line == "END_SCAFFOLDS") break;
@@ -204,7 +204,7 @@ void DataLoader::parseScaffolds(std::istream& in, VisSession& session,
 
 // CONTIG STEPS
 
-void DataLoader::parseContigSteps(std::istream& in, VisSession& session,
+void VisLoader::parseContigSteps(std::istream& in, VisSession& session,
                                   const HeaderCounts& counts) {
     // Reserve based on declared step count, not RUN-compressed line count
     session.contigSteps.reserve(counts.contigSteps);
@@ -212,7 +212,7 @@ void DataLoader::parseContigSteps(std::istream& in, VisSession& session,
     std::string line;
     std::getline(in, line);
     if (line != "BEGIN_CONTIG_STEPS")
-        throw std::runtime_error("data_loader: expected BEGIN_CONTIG_STEPS, got: " + line);
+        throw std::runtime_error("vis_loader: expected BEGIN_CONTIG_STEPS, got: " + line);
 
     while (std::getline(in, line)) {
         if (line == "END_CONTIG_STEPS") break;
@@ -265,10 +265,10 @@ void DataLoader::parseContigSteps(std::istream& in, VisSession& session,
 
 // PUBLIC
 
-VisSession DataLoader::load(const std::string& filePath) {
+VisSession VisLoader::load(const std::string& filePath) {
     std::ifstream in(filePath);
     if (!in.is_open())
-        throw std::runtime_error("data_loader: could not open file: " + filePath);
+        throw std::runtime_error("vis_loader: could not open file: " + filePath);
 
     VisSession session;
 

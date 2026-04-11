@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
     // Load initial file
     auto tryLoad = [&](const std::string& path) {
         try {
-            auto s = std::make_unique<VisSession>(DataLoader::load(path));
+            auto s = std::make_unique<VisSession>(VisLoader::load(path));
             auto v = std::make_unique<ContigView>(*s);
             // Only commit once both succeed
             session        = std::move(s);

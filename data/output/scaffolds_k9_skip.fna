@@ -1,8 +1,0 @@
->Scaffold_1 contigs=1 strategy=skip k=9
-ACGTACGTA
->Scaffold_2 contigs=1 strategy=skip k=9
-TTGGAACCTTGG
->Scaffold_3 contigs=2 strategy=skip k=9
-CGTACGTACGTACGTACC
->Scaffold_4 contigs=1 strategy=skip k=9
-CGTACGTAC
