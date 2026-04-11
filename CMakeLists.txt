@@ -54,7 +54,6 @@ set(CORE_SOURCES
 set(CONSTRUCTION_SOURCES
         src/construction/kmer_encoding.cpp
         src/construction/contig_assembler.cpp
-        src/construction/eulerian_assembler.cpp
         src/construction/scaffolder.cpp
         src/construction/gap_estimation.cpp
         src/construction/gap_filling.cpp
