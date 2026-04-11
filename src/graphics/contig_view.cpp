@@ -465,15 +465,24 @@ void ContigView::renderGenomeMapTab() {
 
 void ContigView::renderContigBar(ImDrawList* drawList, ImVec2 origin, size_t contigIdx) {
     const ContigDisplayState& ds = displayStates_[contigIdx];
-    if (!ds.visible) return;
 
     const float fullW   = barWidth(contigIdx);
     const float filledW = fullW * ds.fillFraction;
 
+    // Background track always renders so you can see unbuilt contigs
     drawList->AddRectFilled(
         origin,
         ImVec2(origin.x + fullW, origin.y + BAR_HEIGHT),
         IM_COL32(50, 50, 50, 180), 3.0f);
+
+    if (!ds.visible) {
+        // Still need the invisible button for hover/click even when not visible
+        ImGui::SetCursorScreenPos(origin);
+        ImGui::InvisibleButton(
+            ("##contig" + std::to_string(contigIdx)).c_str(),
+            ImVec2(fullW, BAR_HEIGHT));
+        return;
+    }
 
     if (filledW > 0.0f) {
         drawList->AddRectFilled(
@@ -678,8 +687,12 @@ void ContigView::renderTimeline() {
 
 void ContigView::render() {
     ImGuiIO& io = ImGui::GetIO();
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(io.DisplaySize);
+
+    float menuBarHeight = ImGui::GetFrameHeight();
+    ImGui::SetNextWindowPos(ImVec2(0, menuBarHeight));
+    ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x,
+                                    io.DisplaySize.y - menuBarHeight));
+
     ImGui::Begin("contig_view",
                  nullptr,
                  ImGuiWindowFlags_NoTitleBar  |
@@ -689,8 +702,10 @@ void ContigView::render() {
                  ImGuiWindowFlags_NoBringToFrontOnFocus);
 
     // Reserve space at the bottom for the timeline
-    const float timelineHeight = ImGui::GetTextLineHeightWithSpacing() * 2.5f;
-    const float tabBarHeight   = ImGui::GetTextLineHeightWithSpacing() + 8.0f;
+    const float timelineHeight = ImGui::GetTextLineHeightWithSpacing() * 3.5f
+                               + ImGui::GetStyle().ItemSpacing.y * 2.0f
+                               + 4.0f;     const float tabBarHeight   = ImGui::GetTextLineHeightWithSpacing() + 8.0f;
+
     const float availHeight    = ImGui::GetContentRegionAvail().y
                                  - timelineHeight - tabBarHeight;
 

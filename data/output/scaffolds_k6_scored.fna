@@ -1,0 +1,82 @@
+>Scaffold_1 contigs=1 strategy=scored k=6
+AAAAATTTTT
+>Scaffold_2 contigs=1 strategy=scored k=6
+AAGGTTAACC
+>Scaffold_3 contigs=1 strategy=scored k=6
+GGCCTTAAGG
+>Scaffold_4 contigs=17 strategy=scored k=6
+TTCGATTCGATCCGATCGGATCGAATCGATTCGATCCGATCGGATCGAATCGATTCGATC
+CGATCGGATCGAATCGATTCGATCCGATCGGATCGAATCGAT
+>Scaffold_5 contigs=19 strategy=scored k=6
+TTCGAACCGAACCTAACCTTACCTTGCCTTGGCTTGGATTGGAATGGAACGGAACCGAAC
+CTAACCTTACCTTGCCTTGGCTTGGATTGGAATGGAACGGAACCGAACCTAACCTT
+>Scaffold_6 contigs=1 strategy=scored k=6
+GGGGGCCCCC
+>Scaffold_7 contigs=15 strategy=scored k=6
+TTTTGGGGAGGGGAAGGGAAAACAAAACCAAACCCAACCCCACCCCGCCCCGGCCCGGGC
+CGGGGCGGGGTGGGGTTGGGTTTTATTTTAATTTAAAAGG
+>Scaffold_8 contigs=8 circular strategy=scored k=6
+TAATTAAATTAAATTAATTTAATTTAATTAAATTAAATTAATTTAATT
+>Scaffold_9 contigs=17 strategy=scored k=6
+TATGCGATGCGCTGCGCAGCGCATCGCATAGCATATCATATGATATGCTATGCGATGCGC
+TGCGCAGCGCATCGCATAGCATATCATATGATATGCTATGCG
+>Scaffold_10 contigs=20 circular strategy=scored k=6
+TAGCTAAGCTAGGCTAGCCTAGCTTAGCTAAGCTAGGCTAGCCTAGCTTAGCTAAGCTAG
+GCTAGCCTAGCTTAGCTAAGCTAGGCTAGCCTAGCTTAGCTAAGCTAGGCTAGCCTAGCT
+>Scaffold_11 contigs=2 strategy=scored k=6
+GCGCATCGCATA
+>Scaffold_12 contigs=3 strategy=scored k=6
+CGATCGGATCGAATCGAT
+>Scaffold_13 contigs=7 strategy=scored k=6
+AACCCCACCCCGCCCCGGCCCGGGCCGGGGCGGGGAGGGGAA
+>Scaffold_14 contigs=2 circular strategy=scored k=6
+CGGCCGGCCCGGCC
+>Scaffold_15 contigs=1 strategy=scored k=6
+GGAACC
+>Scaffold_16 contigs=13 strategy=scored k=6
+GTACGTTACGTAACGTACCGTACGGTACGTTACGTAACGTACCGTACGGTACGTTACGTA
+ACGTACCGTACGGTACGT
+>Scaffold_17 contigs=1 strategy=scored k=6
+TTGGAA
+>Scaffold_18 contigs=1 strategy=scored k=6
+GGGGTT
+>Scaffold_19 contigs=1 strategy=scored k=6
+AAACCC
+>Scaffold_20 contigs=2 strategy=scored k=6
+ACGTACCGTACC
+>Scaffold_21 contigs=1 strategy=scored k=6
+CCGGCC
+>Scaffold_22 contigs=1 strategy=scored k=6
+AATTAA
+>Scaffold_23 contigs=1 strategy=scored k=6
+AACCTT
+>Scaffold_24 contigs=1 strategy=scored k=6
+AAAACC
+>Scaffold_25 contigs=1 strategy=scored k=6
+AAAACC
+>Scaffold_26 contigs=1 strategy=scored k=6
+CCTTGG
+>Scaffold_27 contigs=1 strategy=scored k=6
+ATATGC
+>Scaffold_28 contigs=1 strategy=scored k=6
+GGGGAA
+>Scaffold_29 contigs=2 circular strategy=scored k=6
+CTGACTGAACTGAC
+>Scaffold_30 contigs=1 strategy=scored k=6
+CCCCGG
+>Scaffold_31 contigs=1 strategy=scored k=6
+CCCCGG
+>Scaffold_32 contigs=3 strategy=scored k=6
+CATGCAATGCATGCCATGCA
+>Scaffold_33 contigs=1 strategy=scored k=6
+TTAATT
+>Scaffold_34 contigs=1 strategy=scored k=6
+ACTGAC
+>Scaffold_35 contigs=1 strategy=scored k=6
+TTTTAA
+>Scaffold_36 contigs=1 strategy=scored k=6
+TAGACT
+>Scaffold_37 contigs=1 strategy=scored k=6
+TGACAT
+>Scaffold_38 contigs=1 strategy=scored k=6
+TCAGAT
