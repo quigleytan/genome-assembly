@@ -264,7 +264,7 @@ void ContigView::update(float deltaTime) {
 
 // GENOME MAP TAB
 
-void ContigView::renderGenomeMapTab() {
+void ContigView::renderGenomeMapTab(float availHeight) {
     if (session_.genomeSequence.empty()) {
         ImGui::TextDisabled("No genome sequence available.");
         ImGui::TextDisabled("Run the assembly pipeline with visualization enabled.");
@@ -272,7 +272,7 @@ void ContigView::renderGenomeMapTab() {
     }
 
     const float totalWidth  = ImGui::GetContentRegionAvail().x;
-    const float availHeight = ImGui::GetContentRegionAvail().y;
+
     const float detailWidth = totalWidth * DETAIL_WIDTH_FRACTION;
     const float seqWidth    = totalWidth - detailWidth - ImGui::GetStyle().ItemSpacing.x;
 
@@ -356,9 +356,7 @@ void ContigView::renderGenomeMapTab() {
         }
     }
 
-    // ── Click detection — one invisible button per segment ────────────────
-    // We place a button covering the first row of each segment.
-    // This is sufficient for click intent without complex multi-row regions.
+    // Click detection
     for (size_t si = 0; si < genomeSegments_.size(); ++si) {
         const GenomeSegment& seg = genomeSegments_[si];
 
@@ -407,7 +405,7 @@ void ContigView::renderGenomeMapTab() {
 
     ImGui::SameLine();
 
-    // ── Right: detail panel ───────────────────────────────────────────────
+    // Right detail panel
     ImGui::BeginChild("##mapdetail", ImVec2(detailWidth, availHeight), true);
 
     if (selectedSegment_ < 0 ||
@@ -723,7 +721,7 @@ void ContigView::render() {
         }
 
         if (ImGui::BeginTabItem("Genome Map")) {
-            renderGenomeMapTab();
+            renderGenomeMapTab(availHeight);
             ImGui::EndTabItem();
         }
 

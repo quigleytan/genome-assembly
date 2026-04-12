@@ -107,7 +107,7 @@ private:
 
     // SUB-RENDERER
     void renderAnimationTab();
-    void renderGenomeMapTab();
+    void renderGenomeMapTab(float availHeight);
     void buildGenomeSegments();
 
     // PRECOMPUTED DATA
