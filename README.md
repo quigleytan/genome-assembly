@@ -10,35 +10,43 @@ circular genomes, and visualize genome assembly.
 - Eulerian path computation and visualization.
 - K-mer, contig, and scaffold construction and visualization.
 
-## Brief Overview
+## Brief Overview and Key Files
 ***
 ### Module 1: DNA Sequence Representation and K-mer Analysis
 Implementation of data structures to hold, analyze, and conduct basic analysis on genomic sequences.
 - **Classes**:
-- `DNASequence`: Represents a DNA sequence with methods for validation and manipulation.
-- `KmerEncoder`: Encodes k-mers for efficient storage and retrieval.
+- `dna_sequence`: Represents a DNA sequence with methods for validation and manipulation.
+- `kmer_encoding`: Encodes k-mers for efficient storage and retrieval.
 
 ### Module 2: DNA Sequence Handling and File I/O
 Allow proper file reading and input of data from FASTA files.
-- `SequenceReader`: Reads DNA sequences from FASTA files.
-- `OpenAddressingTable`: Linear probing hash table implementation.
-- `KmerTable`: Child class of `OpenAddressingTable` efficient k-mer storage and retrieval.
-- `DeBruijnGraph`: Writes DNA sequences to FASTA files, has an `OpenAddressingTable` for node storage. Does not compress
+- `sequence_reader`: Reads DNA sequences from FASTA files.
+- `open_addressing_table`: Linear probing hash table implementation.
+- `kmer_table`: Child class of `open_addressing_table` efficient k-mer storage and retrieval.
+- `de_bruijn_graph`: Writes DNA sequences to FASTA files, has an `open_addressing_table` for node storage. Does not compress
 edges, as this is crucial from Eulerian walk assembly.
 - `InitializationTests`, `ProcessingTests`, `AssemblyTests`: Tests proper logical data manipulation, file I/O, and
 implementation of data structures.
 
 ### Module 3: Genome Reconstruction and Assembly
-Eulerian walk implementation for genome assembly.
+Implementation of main assembly algorithms and pipelines.
+- `eulerian_traversal`: Implements a simple Eulerian walk algorithm to reconstruct genomes from De Bruijn graphs.
+- `contig_traversal`: Implements a multi-stage traversal strategy to generate contigs from De Bruijn graphs.
+- `contig_scaffolder`: Orders and assembles contigs into scaffolds, and scaffolds into the final genome assembly.
 
 ### Module 4:
 Visualization of DNA sequences and assembly results using C++ graphics.
+- `contig_view`: Contains rendering logic for contigs and scaffolds.
+- `vis_loader`, `vis_exporter`: Handles loading and exporting of visualization data.
+- `recorder`: Allows for recording of assembly results to a visdata file.
+- `gui`: Main visualization program.
 
 ## Full Overview and Report
 
 ***
 
 ### Module 1
+
 This module focused on creating classes and laying out the groundwork for future scaling of my gene sequencer. The main
 classes created were DNASequence, KmerCounter, and KmerEncoder. Each class has its own header and implementation files,
 with proper documentation for each method and member variable. These files allow for storage of DNA sequences and its
@@ -76,7 +84,7 @@ storage, file reading, and graph logic all work as intended. They are split up i
 are intended to be run in the order they are listed in the Module 2 quick overview, as each stage is reliant on the ones
 before it. For more information regarding my testing files and outputs, see the testing section of the `README.md`.
 
-### Testing Summary
+### Testing Summary (Module 2)
 I wanted to explain my testing cases, especially for `AssemblyTests.cpp`, as the values being tested for can seem a bit
 arbitrary. Starting with `InitializationTests.cpp`, I am just checking to make sure that the information being read in
 from the FASTA file is correct, and that basic DNA sequence information is correct. Next, `ProcessingTests.cpp` is
@@ -129,23 +137,48 @@ assembled into the final genome.
 
 ### Module 4
 
+NOTE: Any files mentioned in the modules prior have likely been renamed and reorganized, explanations below.
 
+For this module, I focused on creating a simple yet independent visualization of the assembly process. Up until this
+point, I had been printing out stdout-based visualizations of the assembly process built into the main pipeline. 
+However, I want to separate the visualization from the assembly process, as it is not necessary for the assembly to run,
+and it allows for quicker testing of the algorithmic logic and overall reconstruction accuracy. This is especially
+important if the pipeline was to open up a graphics window on every run. From this, I currently have two main files:
+`scaffold_assembly.cpp` and `gui.cpp`. `scaffold_assembly.cpp` is the main file that runs the assembly pipeline and
+creates informative files regarding the results of the assembly. This also creates the visdata files that my graphics
+pipeline reads in. `gui.cpp` is the file that creates the graphical user interface and currently contains two tabs once
+the user provides the proper visdata file. The first tab shows each scaffold and its corresponding contigs, while
+the second tab shows the final assembly and its corresponding scaffolds. I have yet to implement gap size estimation or
+resolution, so the sequences seen have grey spaces that are 10 bases wide, representing unknown regions between known
+scaffolds. I used ImGui to create interactive elements such as the scrollable sections, and I used relatively simple
+GLFW/Open GL to represent the contigs and scaffolds. Finally, this module also included a complete project structure
+overhaul, as it moved files into `src` and `include` directories to help make file paths more intuitive. Prior to this
+change, I was constantly confusing myself with where the file I was working on was located relative to the graphics
+modules or project-wide files. 
 
+Notable name changes:
+- All files were changed from PascalCase to snake_case.
+- DataLoader/Exporter were renamed to vis_exporter/loader to help clear up what type of data it was used for.
+- All the assembly pipelines were prefixed with the strategy and filetype they used.
 
-Visualization piepline
-Step 1 — CMakeLists.txt changes (FetchContent + Visualizer executable)
-Step 2 — VisData.h (all shared structs, no dependencies)
-Step 3 — Recorder.h (header-only step recorder, optional ptr in traversal classes)
-Step 4 — DataExporter.h/.cpp (writes .visdata from VisSession)
-Step 5 — DataLoader.h/.cpp (reads .visdata back into VisSession)
-Step 6 — Modify ContigTraversal.cpp (~10 lines, non-breaking)
-Step 7 — Modify ContigScaffolder.cpp (~10 lines, non-breaking)
-Step 8 — ContigView.h/.cpp (bar renderer + animation)
-Step 9 — VisualizerApp.cpp (window, loop, top-level state)
+As far as current bugs go, I have an issue where when my sequence wraps on the second tab
+of the GUI, only the upper sequence is responding to cursor placement. At the time of writing this, I have no idea as
+to why this is happening, and I need to find my programming duck to fix this issue. I plan to solve this before Sunday's
+submission, but I am writing this here in case it is not fixed.
 
+As far as future work goes, I would like to implement an easier file selection system for the user, as the current
+filepath system is not intuitive and can be very frustrating to use. Additionally, I plan on implementing gap size
+estimation and resolution, as this will allow for me to construct a "polished" finished genome. For this process, I 
+currently would like to visualize the steps of the resolution process step-by-step using another header in my visdata 
+files. Finally, I need to build in more support for scaffold tracing from sink nodes accurately, as that is the main
+source of error in my reconstructed products. 
 
-
-
+For this module, I think that I have earned approximately 100 points, as I have two functional main programs for each of
+my main processes. The graphical user interface is interactive with the inclusion of a scrollable timeline and
+information panels when scaffolds/contigs are clicked on. I understand if I lose points on user-friendliness for the
+file input section, which I understand, but I think that the rest of the program is relatively easy to navigate.
+Finally, I think that my code is organized into folders that make sense given the scope of a file's functionality. I
+made sure to have graphical, data, and core algorithms separated, as well as separating cpp and header files.
 
 ### References
 
