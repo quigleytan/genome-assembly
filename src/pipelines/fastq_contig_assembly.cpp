@@ -17,9 +17,9 @@ static constexpr size_t ESTIMATED_TOTAL_BASES = 100000;
 // PIPELINE STAGES
 
 /**
- * @brief Stage 1 — Load FASTQ reads into a KmerTable.
+ * @brief Stage 1 - Load FASTQ reads into a KmerTable.
  *
- * The returned kmer_table must stay alive through buildGraph(),
+ * The returned kmer_table must stay instantiated through buildGraph(),
  * since the file stream is fully consumed here and cannot be re-read.
  *
  * @param path Path to the FASTQ file.
@@ -40,12 +40,12 @@ static KmerTable loadReads(const std::string& path, size_t k) {
 }
 
 /**
- * @brief Stage 2 — Build a DeBruijnGraph from an encoded KmerTable.
+ * @brief Stage 2 - Build a DeBruijnGraph from an encoded KmerTable.
  *
  * Pre-sized to 2x unique k-mer count to reduce rehashing.
  *
  * @param kTable Populated KmerTable from loadReads().
- * @param k      K-mer size — must match the k used in loadReads().
+ * @param k      K-mer size - must match the k used in loadReads().
  * @return Populated DeBruijnGraph.
  */
 static DeBruijnGraph buildGraph(const KmerTable& kTable, size_t k) {
@@ -61,7 +61,7 @@ static DeBruijnGraph buildGraph(const KmerTable& kTable, size_t k) {
 }
 
 /**
- * @brief Stage 3 — Run contig traversal and print stats.
+ * @brief Stage 3 - Run contig traversal and print stats.
  *
  * @param graph Populated DeBruijnGraph.
  */
@@ -71,9 +71,7 @@ static void assembleContigs(DeBruijnGraph& graph) {
     ct.printStats();
 }
 
-
 // MAIN
-
 
 int main() {
     try {

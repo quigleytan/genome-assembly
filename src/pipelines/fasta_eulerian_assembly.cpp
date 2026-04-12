@@ -16,7 +16,7 @@
 // HELPER FUNCTION
 
 /**
- * @brief Finds the rotation offset needed to align assembled to original.
+ * @brief Finds the rotation offset needed to align assembled to the original.
  *
  * Searches for original as a substring of assembled+assembled using KMP.
  * The match position gives the number of bases assembled must be rotated

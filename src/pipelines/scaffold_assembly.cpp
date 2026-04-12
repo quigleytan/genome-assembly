@@ -24,7 +24,7 @@ static constexpr size_t INTER_SCAFFOLD_NS = 10;
 static constexpr size_t FASTA_LINE_WIDTH  = 60;
 
 
-// STAGE 1 — Load reads
+// STAGE 1 - Load reads
 
 static KmerTable loadReads(const std::string& path, size_t k, size_t totalBases) {
     std::ifstream file(path);
@@ -39,7 +39,7 @@ static KmerTable loadReads(const std::string& path, size_t k, size_t totalBases)
     return kTable;
 }
 
-// STAGE 2 — Build graph
+// STAGE 2 - Build graph
 
 static DeBruijnGraph buildGraph(const KmerTable& kTable, size_t k) {
     DeBruijnGraph graph(k, kTable.getNumItems() * 2);
@@ -53,7 +53,7 @@ static DeBruijnGraph buildGraph(const KmerTable& kTable, size_t k) {
     return graph;
 }
 
-// STAGE 3 — Contig traversal
+// STAGE 3 - Contig traversal
 
 // Normal pipeline run - no recording
 static std::vector<ContigAssembler::Contig> buildContigs(DeBruijnGraph& graph) {
@@ -73,7 +73,7 @@ static std::vector<ContigAssembler::Contig> buildContigs(DeBruijnGraph& graph,
 }
 
 
-// STAGE 4 — Scaffold
+// STAGE 4 - Scaffold
 
 
 static Scaffolder buildScaffolds(
@@ -88,7 +88,7 @@ static Scaffolder buildScaffolds(
     return scaffolder;
 }
 
-// STAGE 5a — Write per-scaffold FASTA
+// STAGE 5a - Write per-scaffold FASTA
 
 static void writeScaffoldFasta(
     const std::vector<Scaffold>& scaffolds,
@@ -131,7 +131,7 @@ static void writeScaffoldFasta(
 }
 
 
-// STAGE 5b — Write full pseudo-genome FASTA
+// STAGE 5b - Write full pseudo-genome FASTA
 
 static void writeFullGenomeFasta(
     const std::vector<Scaffold>& scaffolds,
@@ -164,17 +164,11 @@ static void writeFullGenomeFasta(
 }
 
 
-// STAGE 6 — Write .visdata for visualizer
+// STAGE 6 - Write .visdata for visualizer
 
-
-static void writeVisData(
-    const std::vector<ContigAssembler::Contig>& contigs,
-    const Scaffolder& scaffolder,
-    VisSession& session,
-    const std::string& sourcePath,
-    const std::string& strategyName,
-    size_t k)
-{
+static void writeVisData(const std::vector<ContigAssembler::Contig>& contigs, const Scaffolder& scaffolder,
+                         VisSession& session, const std::string& sourcePath, const std::string& strategyName,
+                         size_t k) {
 
     session.k            = k;
     session.sourceFile   = sourcePath;
@@ -191,10 +185,9 @@ static void writeVisData(
 
     scaffolder.toVisSession(session, k - 1);
 
+    // Visdata file output location
     const std::string visPath =
         "../data/graphical/assembly_k" + std::to_string(k) + "_" + strategyName + ".visdata";
-
-
 
     VisExporter::write(session, visPath);
 
@@ -202,16 +195,16 @@ static void writeVisData(
     std::cout << "Launch with: Visualizer.exe " << visPath << "\n";
 }
 
-// MAIN
+// MAIN PIPELINE
 
 int main() {
     try {
         const std::string path           = "../data/genomic/" + sequence[7];
         const size_t estimatedTotalBases = 100000;
 
-        // Phase 1
+        // Phase 1 (multiple strategy testing option)
 
-        const std::vector<size_t> kValues = { 6 };
+        const std::vector<size_t> kValues = {6};
 
         const std::vector<std::pair<ResolutionStrategy, std::string>> strategies = {
             { ResolutionStrategy::skip(),   "skip"   },
@@ -272,8 +265,7 @@ int main() {
             "Escherichia_pseudo_genome",
             "../data/output/full_reconstructed_genome.fna");
 
-        // Write .visdata — populates session metadata and contig/scaffold
-        // structs, then serializes the whole session to disk
+        // Write .visdata to populate session metadata and contig/scaffold structs
         writeVisData(contigs, scaffolder, session, path, primaryStrategy, primaryK);
 
     } catch (const std::exception& e) {
