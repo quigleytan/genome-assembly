@@ -7,7 +7,6 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include <stdexcept>
 #include <chrono>
 
 // GLFW + OpenGL
@@ -81,7 +80,7 @@ static std::string renderLoadPrompt() {
     ImGui::TextWrapped("Enter the path to a .visdata file produced by the assembly pipeline:");
     ImGui::Spacing();
 
-    // Focus the input field automatically on first open
+    // Focus the input field automatically
     ImGui::SetNextItemWidth(-1);
     bool pressedEnter = ImGui::InputText(
         "##filepath", pathBuf, sizeof(pathBuf),
@@ -124,7 +123,7 @@ static std::string renderMenuBar(const std::string& currentFile) {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Load .visdata..."))
-                result = "__SHOW_PROMPT__"; // sentinel to open the prompt
+                result = "__SHOW_PROMPT__"; // Sentinel to open the prompt
             ImGui::Separator();
             if (ImGui::MenuItem("Quit"))
                 glfwSetWindowShouldClose(
@@ -176,7 +175,7 @@ int main(int argc, char** argv) {
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // VSync — caps frame rate to monitor refresh
+    glfwSwapInterval(1); // VSync - caps frame rate to monitor refresh
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -242,7 +241,7 @@ int main(int argc, char** argv) {
         if (menuAction == "__SHOW_PROMPT__")
             showPrompt = true;
 
-        // ── Load prompt (shown when no file loaded or user requests load) ──
+        // Load prompt
         if (showPrompt) {
             std::string promptResult = renderLoadPrompt();
             if (!promptResult.empty())

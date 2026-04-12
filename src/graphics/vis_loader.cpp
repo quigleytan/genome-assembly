@@ -62,9 +62,9 @@ VisLoader::HeaderCounts VisLoader::parseHeader(std::istream& in, VisSession& ses
             iss >> session.strategyName;
 
         } else if (key == "SOURCE") {
-            // Source path may contain spaces — read the rest of the line
+            // Source path may contain spaces - read the rest of the line
             std::getline(iss, session.sourceFile);
-            // Trim leading space left by iss >> key
+            // Trim the leading space left by iss >> key
             if (!session.sourceFile.empty() && session.sourceFile[0] == ' ')
                 session.sourceFile = session.sourceFile.substr(1);
 
@@ -89,7 +89,7 @@ void VisLoader::parseGenome(std::istream& in, VisSession& session) {
     if (line != "BEGIN_GENOME")
         throw std::runtime_error("vis_loader: expected BEGIN_GENOME, got: " + line);
 
-    // Read the genome sequence — single line
+    // Read the genome sequence - single line
     std::getline(in, session.genomeSequence);
 
     // Consume END_GENOME
@@ -99,7 +99,6 @@ void VisLoader::parseGenome(std::istream& in, VisSession& session) {
 }
 
 // CONTIGS
-
 
 void VisLoader::parseContigs(std::istream& in, VisSession& session,
                               const HeaderCounts& counts) {
@@ -182,7 +181,7 @@ void VisLoader::parseScaffolds(std::istream& in, VisSession& session,
             std::getline(in, membersLine);
             std::istringstream mss(membersLine);
             std::string mkey;
-            mss >> mkey; // consume "MEMBERS"
+            mss >> mkey; // Consume "MEMBERS"
             size_t idx;
             while (mss >> idx)
                 s.contigIndices.push_back(idx);
@@ -192,7 +191,7 @@ void VisLoader::parseScaffolds(std::istream& in, VisSession& session,
             std::getline(in, gapsLine);
             std::istringstream gss(gapsLine);
             std::string gkey;
-            gss >> gkey; // consume "GAPS"
+            gss >> gkey; // Consume "GAPS"
             int gap;
             while (gss >> gap)
                 s.gaps.push_back(gap);

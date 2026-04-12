@@ -3,15 +3,14 @@
  * Summary:
  * - Serializes a VisSession to a plain-text .visdata file.
  * - Called at the end of a pipeline run when visualization is requested.
- * - The .visdata format is line-oriented and human-readable, making it
- *   easy to inspect and debug without a special tool.
+ * - Line oriented for easier debugging.
  * Important notes:
  * - NodeId (__uint128_t) is written as two hex uint64_t values
  *   separated by ':' since __uint128_t has no standard stream support.
  * - Strings that may contain spaces (sequences, labels, file paths) are
  *   always written last on their line so the loader can use getline.
- * - The file is self-describing: a VERSION header lets the loader reject
- *   files written by an incompatible older exporter.
+ * - VERSION header lets the loader reject files written by an incompatible an
+ *   older exporter.
  */
 
 #ifndef DATA_EXPORTER_H
@@ -49,7 +48,7 @@ private:
 
     /**
      * @brief Writes the SESSION header block.
-     * Contains version, k, sourceFile, and strategyName.
+     * Contains the version, k, sourceFile, and strategyName.
      */
     static void writeHeader(std::ostream& out, const VisSession& session);
 

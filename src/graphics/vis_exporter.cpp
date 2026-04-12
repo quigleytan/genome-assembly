@@ -1,4 +1,3 @@
-
 #include "assembler/graphics/vis_exporter.h"
 
 #include <fstream>
@@ -54,11 +53,11 @@ void VisExporter::writeContigs(std::ostream& out, const VisSession& session) {
             << c.scaffoldIndex          << ' '   // scaffold membership
             << encodeNodeId(c.startNode) << ' '
             << encodeNodeId(c.endNode)   << ' '
-            // Labels last — may contain any characters except newline
+            // Labels last - may contain any characters except \n
             << c.startLabel             << ' '
             << c.endLabel               << '\n';
 
-        // Line 2: full sequence on its own line, prefixed so loader knows what it is
+        // Line 2: full sequence on its own line, prefixed so the loader knows what it is
         out << "SEQ " << c.sequence << '\n';
     }
 
@@ -82,7 +81,7 @@ void VisExporter::writeScaffolds(std::ostream& out, const VisSession& session) {
             out << ' ' << idx;
         out << '\n';
 
-        // Gap list — one entry per contig (-1 = unknown, 0 = direct overlap)
+        // Gap list - one entry per contig (-1 = unknown, 0 = direct overlap)
         out << "GAPS";
         for (int gap : s.gaps)
             out << ' ' << gap;
@@ -94,11 +93,6 @@ void VisExporter::writeScaffolds(std::ostream& out, const VisSession& session) {
 
 void VisExporter::writeContigSteps(std::ostream& out, const VisSession& session) {
     out << "BEGIN_CONTIG_STEPS\n";
-
-    // Run-length encode consecutive BaseAppended steps for the same contig.
-    // Instead of one line per base (expensive for long sequences), we write:
-    //   RUN <contigIndex> <count> <bases>
-    // which the loader expands back into individual BaseAppended steps.
 
     size_t i = 0;
     while (i < session.contigSteps.size()) {
@@ -118,20 +112,20 @@ void VisExporter::writeContigSteps(std::ostream& out, const VisSession& session)
             i = j;
 
         } else if (step.type == TraversalStep::Type::ContigStarted) {
-            // sequence field holds the startLabel (see Recorder.h)
+            // The sequence field holds the startLabel (see Recorder.h)
             out << "STARTED " << step.contigIndex << ' ' << encodeNodeId(step.from)
                 << ' ' << step.sequence << '\n';
             ++i;
 
         } else if (step.type == TraversalStep::Type::ContigFinished) {
-            // base field encodes circularity: 'C' = circular, 'L' = linear
+            // Base field encodes circularity: 'C' = circular, 'L' = linear
             out << "FINISHED " << step.contigIndex << ' '
                 << (step.base == 'C' ? 1 : 0) << ' '
                 << step.sequence << '\n';
             ++i;
 
         } else {
-            // Unknown step type — skip with a comment so the file stays valid
+            // Unknown step type - skip with a comment so the file stays valid
             out << "# unknown step type " << static_cast<int>(step.type) << '\n';
             ++i;
         }

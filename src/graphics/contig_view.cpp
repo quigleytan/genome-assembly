@@ -15,7 +15,6 @@ constexpr const char* ContigView::SPEED_LABELS[];
 
 // CONSTRUCTION
 
-
 ContigView::ContigView(const VisSession& session)
     : session_(session) {
     buildDisplayData();
@@ -83,10 +82,7 @@ void ContigView::buildDisplayData() {
     buildGenomeSegments();
 }
 
-// GENOME MAP — SEGMENT BUILDER
-// Walks genomeSequence and records each run of
-// non-N chars (scaffold) and N chars (gap) as
-// a GenomeSegment with its scaffold index.
+// GENOME MAP
 
 void ContigView::buildGenomeSegments() {
     genomeSegments_.clear();
@@ -99,7 +95,7 @@ void ContigView::buildGenomeSegments() {
 
     while (i < genome.size()) {
         if (genome[i] == 'N') {
-            // Gap — consume run of Ns
+            // Gap - consume run of Ns
             size_t start = i;
             while (i < genome.size() && genome[i] == 'N')
                 ++i;
@@ -112,7 +108,7 @@ void ContigView::buildGenomeSegments() {
             genomeSegments_.push_back(seg);
 
         } else {
-            // Scaffold — consume run of non-N chars
+            // Scaffold - consume run of non-N chars
             size_t start = i;
             while (i < genome.size() && genome[i] != 'N')
                 ++i;
@@ -218,6 +214,7 @@ void ContigView::applyStep(const TraversalStep& step) {
 }
 
 void ContigView::resetAnimation() {
+    // Clears all animation state values
     currentStep_ = 0;
     accumulator_ = 0.0f;
     playing_     = false;
@@ -244,6 +241,7 @@ void ContigView::seekToStep(size_t targetStep) {
 
 void ContigView::update(float deltaTime) {
     if (!playing_ || session_.contigSteps.empty()) return;
+
     if (currentStep_ >= session_.contigSteps.size()) {
         playing_ = false;
         return;
@@ -276,7 +274,7 @@ void ContigView::renderGenomeMapTab(float availHeight) {
     const float detailWidth = totalWidth * DETAIL_WIDTH_FRACTION;
     const float seqWidth    = totalWidth - detailWidth - ImGui::GetStyle().ItemSpacing.x;
 
-    // ── Left: wrapping sequence view ──────────────────────────────────────
+    // Wrapping sequence view in a child window to enable scrolling
     ImGui::BeginChild("##genomemap",
                       ImVec2(seqWidth, availHeight),
                       false,
@@ -344,7 +342,7 @@ void ContigView::renderGenomeMapTab(float availHeight) {
 
             drawList->AddRectFilled(cellMin, cellMax, color);
 
-            // Subtle grid lines between cells
+            // Grid lines between cells
             drawList->AddRect(cellMin, cellMax,
                               IM_COL32(20, 20, 20, 60), 0.0f, 0, 0.5f);
 
@@ -459,7 +457,7 @@ void ContigView::renderGenomeMapTab(float availHeight) {
     ImGui::EndChild();
 }
 
-//SUB-RENDERERS (unchanged)
+//SUB-RENDERERS
 
 void ContigView::renderContigBar(ImDrawList* drawList, ImVec2 origin, size_t contigIdx) {
     const ContigDisplayState& ds = displayStates_[contigIdx];
@@ -467,14 +465,13 @@ void ContigView::renderContigBar(ImDrawList* drawList, ImVec2 origin, size_t con
     const float fullW   = barWidth(contigIdx);
     const float filledW = fullW * ds.fillFraction;
 
-    // Background track always renders so you can see unbuilt contigs
+    // Background track always renders allowing unbuilt contigs to be seen
     drawList->AddRectFilled(
         origin,
         ImVec2(origin.x + fullW, origin.y + BAR_HEIGHT),
         IM_COL32(50, 50, 50, 180), 3.0f);
 
     if (!ds.visible) {
-        // Still need the invisible button for hover/click even when not visible
         ImGui::SetCursorScreenPos(origin);
         ImGui::InvisibleButton(
             ("##contig" + std::to_string(contigIdx)).c_str(),
@@ -516,6 +513,7 @@ void ContigView::renderContigBar(ImDrawList* drawList, ImVec2 origin, size_t con
 }
 
 void ContigView::renderBarPanel(float availWidth, float availHeight) {
+    // Creating a scrollable child region for the contig bars
     ImGui::BeginChild("##barview",
                       ImVec2(availWidth, availHeight),
                       false,
@@ -531,6 +529,7 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
         cursor.x = x0;
     };
 
+    // Rendering scaffolds
     for (const ScaffoldRow& row : scaffoldRows_) {
         const VisScaffold& vs = session_.scaffolds[row.scaffoldIndex];
 
@@ -564,6 +563,7 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
         advanceCursor(SCAFFOLD_GAP);
     }
 
+    // Rendering unscaffolded contigs
     if (!unscaffoldedContigs_.empty()) {
         ImGui::SetCursorScreenPos(cursor);
         ImGui::TextColored(
@@ -572,6 +572,7 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
             unscaffoldedContigs_.size());
         advanceCursor(ImGui::GetTextLineHeight() + 4.0f);
 
+        // Rendering each individual contig
         for (size_t ci : unscaffoldedContigs_) {
             ImVec2 barOrigin = { x0, cursor.y };
             renderContigBar(drawList, barOrigin, ci);
@@ -598,6 +599,7 @@ void ContigView::renderDetailPanel(float panelWidth, float availHeight) {
                        "Contig %d", selectedContig_);
     ImGui::Separator();
 
+    // Contig metadata
     ImGui::Text("Length:    %zu bases", c.sequence.length());
     ImGui::Text("Scaffold:  %s",
         c.scaffoldIndex >= 0
@@ -614,6 +616,8 @@ void ContigView::renderDetailPanel(float panelWidth, float availHeight) {
 
     ImGui::Spacing();
     ImGui::Separator();
+
+    // Sequence preview information
     ImGui::TextDisabled("Sequence preview:");
 
     constexpr size_t PREVIEW_LEN = 120;
@@ -625,6 +629,8 @@ void ContigView::renderDetailPanel(float panelWidth, float availHeight) {
     }
 
     ImGui::Spacing();
+
+    // User selects copy sequence function
     if (ImGui::Button("Copy sequence"))
         ImGui::SetClipboardText(c.sequence.c_str());
 
@@ -681,7 +687,7 @@ void ContigView::renderTimeline() {
     }
 }
 
-// RENDER — TOP LEVEL
+// RENDER - TOP LEVEL
 
 void ContigView::render() {
     ImGuiIO& io = ImGui::GetIO();
@@ -728,7 +734,6 @@ void ContigView::render() {
         ImGui::EndTabBar();
     }
 
-    // Timeline always visible regardless of active tab
     renderTimeline();
 
     ImGui::End();

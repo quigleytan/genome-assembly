@@ -16,7 +16,6 @@
 #define SCAFFOLDER_H
 
 #include <vector>
-#include <string>
 
 #include "assembler/core/kmer_types.h"
 #include "assembler/core/vis_data.h"
@@ -24,7 +23,6 @@
 #include "assembler/core/kmer_table.h"
 #include "assembler/core/open_addressing_table.h"
 #include "assembler/construction/contig_assembler.h"
-
 
 // SCORING WEIGHT CONFIGURATIONS
 
@@ -156,15 +154,14 @@ public:
      *
      * Called by the pipeline after buildScaffolds() when visualization
      * is requested. Populates session.contigs and session.scaffolds.
-     * Does not touch session.contigSteps — those are written by ContigAssembler.
      *
      * @param session  VisSession to populate. Must already have session.k set.
-     * @param nodeLen  k-1 — used to decode start/end node labels.
+     * @param nodeLen  k-1 - used to decode start/end node labels.
      */
     void toVisSession(VisSession& session, size_t nodeLen) const;
 
     /**
-     * @brief Reports scaffolding statistics to stdout.
+     * @brief Reports scaffolding statistics to for debugging.
      */
     void printStats() const;
 };

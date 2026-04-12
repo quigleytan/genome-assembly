@@ -3,14 +3,12 @@
  * Summary:
  * - Deserializes a .visdata file written by DataExporter into a VisSession.
  * - Called by VisualizerApp at startup when a file is selected.
- * - Validates the format version before parsing and throws descriptively
- *   on any malformed line so the user knows exactly what went wrong.
  * Important notes:
  * - NodeId hi:lo hex pairs are decoded back into __uint128_t.
  * - RUN blocks in the contig step section are expanded into individual
  *   BaseAppended steps so contig_view's animator sees a flat step list.
  * - Section order in the file must match DataExporter's write order.
- *   Unknown section headers are skipped for forward compatibility.
+ * - Unknown section headers are skipped for forward compatibility.
  */
 
 #ifndef DATA_LOADER_H
@@ -47,7 +45,7 @@ private:
     static NodeId decodeNodeId(const std::string& encoded);
 
     /**
-     * @brief Parses the header block, validates version, fills session metadata.
+     * @brief Parses the header block, validates the version, fills session metadata.
      * Reads until END_HEADER. Returns a struct of the counts declared in the header
      * so the loader can pre-reserve vectors before parsing each section.
      */

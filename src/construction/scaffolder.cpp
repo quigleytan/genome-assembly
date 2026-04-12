@@ -60,6 +60,7 @@ double Scaffolder::computeFrequencyScore(const ContigAssembler::Contig& contig) 
     }
     ++kmerCount;
 
+    // Search loop
     for (size_t i = k; i < seq.length(); ++i) {
         kmer  = KmerEncoding::roll(kmer, seq[i], k);
         count = kmerTable_->find(kmer);
@@ -97,6 +98,7 @@ double Scaffolder::scoreContig(size_t contigIndex) const {
     double effectiveLengthWeight    = strategy_.weights.lengthWeight;
     double effectiveFrequencyWeight = strategy_.weights.kmerFrequencyWeight;
 
+    // If a KmerTable was not provided, frequency is taken into account for scoring
     if (kmerTable_ == nullptr && effectiveFrequencyWeight > 0.0) {
         effectiveLengthWeight    += effectiveFrequencyWeight;
         effectiveFrequencyWeight  = 0.0;
@@ -109,8 +111,7 @@ double Scaffolder::scoreContig(size_t contigIndex) const {
                 ? strategy_.weights.overlapQualityWeight * computeOverlapScore(contig) : 0.0);
 }
 
-size_t Scaffolder::resolveNext(NodeId boundaryNode,
-                                     const std::vector<bool>& visited) const {
+size_t Scaffolder::resolveNext(NodeId boundaryNode, const std::vector<bool>& visited) const {
     const std::vector<size_t>* candidates = startNodeMap_.find(boundaryNode);
 
     if (!candidates || candidates->empty())
@@ -134,21 +135,22 @@ size_t Scaffolder::resolveNext(NodeId boundaryNode,
     return bestContig;
 }
 
-Scaffold Scaffolder::walkScaffold(size_t startIndex,
-                                        std::vector<bool>& visited) const {
+Scaffold Scaffolder::walkScaffold(size_t startIndex, std::vector<bool>& visited) const {
     Scaffold scaffold;
     size_t contigIndex = startIndex;
 
+    // Main loop
     while (true) {
         visited[contigIndex] = true;
 
         ScaffoldEntry entry;
         entry.contigIndex = contigIndex;
         entry.gapAfter    = ScaffoldEntry::DIRECT_OVERLAP;
-        entry.score       = scoreContig(contigIndex); // ← now populated
+        entry.score       = scoreContig(contigIndex);
 
         size_t next = resolveNext(contigs_[contigIndex].endNode, visited);
 
+        // Gap detection and termination
         if (next == std::numeric_limits<size_t>::max()) {
             entry.gapAfter = ScaffoldEntry::UNKNOWN_GAP;
             scaffold.entries.push_back(entry);
@@ -175,10 +177,8 @@ bool Scaffolder::isScaffoldStart(size_t contigIndex) const {
 
 // PUBLIC
 
-Scaffolder::Scaffolder(const std::vector<ContigAssembler::Contig>& contigs,
-                                   const DeBruijnGraph& graph,
-                                   ResolutionStrategy strategy,
-                                   const KmerTable* kmerTable)
+Scaffolder::Scaffolder(const std::vector<ContigAssembler::Contig>& contigs, const DeBruijnGraph& graph,
+                       ResolutionStrategy strategy, const KmerTable* kmerTable)
     : contigs_(contigs),
       graph_(graph),
       kmerTable_(kmerTable),
@@ -196,13 +196,13 @@ void Scaffolder::buildScaffolds() {
 
     std::vector<bool> visited(contigs_.size(), false);
 
-    // Stage 1: linear entry points
+    // Stage 1: Linear entry points
     for (size_t i = 0; i < contigs_.size(); ++i) {
         if (!visited[i] && isScaffoldStart(i))
             scaffolds_.push_back(walkScaffold(i, visited));
     }
 
-    // Stage 2: isolated cycles / circular scaffolds
+    // Stage 2: Isolated cycles and circular scaffolds
     for (size_t i = 0; i < contigs_.size(); ++i) {
         if (!visited[i])
             scaffolds_.push_back(walkScaffold(i, visited));
@@ -214,7 +214,7 @@ const std::vector<Scaffold>& Scaffolder::getScaffolds() const {
 }
 
 void Scaffolder::toVisSession(VisSession& session, size_t nodeLen) const {
-    // Build a scaffold-index lookup so we can stamp each VisContig with which scaffold it belongs to in a single pass.
+    // Time stamping index for graphical representation.
     std::vector<int> contigToScaffold(contigs_.size(), -1);
     for (size_t si = 0; si < scaffolds_.size(); ++si) {
         for (const auto& entry : scaffolds_[si].entries)
