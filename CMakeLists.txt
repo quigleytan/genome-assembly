@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(M4OEP-tequigle)
+project(quigleytan-genome-assembly)
 
 set(CMAKE_CXX_STANDARD 17)
 
