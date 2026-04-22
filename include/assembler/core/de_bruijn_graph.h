@@ -1,5 +1,5 @@
 /*
- * DeBruijnGraph.h
+ * de_bruijn_graph.h
  * Created by Tanner Quigley on 2/15/2026
  * Summary:
  * - Representation of a De Bruijn graph to be used for Eulerian walks for genome assembly.

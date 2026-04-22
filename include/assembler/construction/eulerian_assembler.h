@@ -1,5 +1,5 @@
 /*
- * EulerianTraversal.h
+ * eulerian_assembler.h
  * Created by Tanner Quigley on 2/15/2026
  * Summary:
  * - Computes an Eulerian path or circuit through a DeBruijnGraph using

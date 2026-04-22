@@ -1,5 +1,5 @@
 /*
- * DNASequence.h
+ * dna_sequence.h
  * Summary:
  * - Represents a DNA sequence and provides analysis of its composition.
  * Features:
