@@ -358,44 +358,47 @@ void ContigView::renderGenomeMapTab(float availHeight) {
     for (size_t si = 0; si < genomeSegments_.size(); ++si) {
         const GenomeSegment& seg = genomeSegments_[si];
 
-        size_t pos  = seg.startPos;
-        size_t row  = pos / static_cast<size_t>(basesPerRow);
-        size_t col  = pos % static_cast<size_t>(basesPerRow);
+        size_t pos    = seg.startPos;
+        size_t segEnd = seg.startPos + seg.length;
 
-        float cellX = origin.x + static_cast<float>(col) * CELL_WIDTH;
-        float cellY = origin.y + static_cast<float>(row) * rowHeight;
+        while (pos < segEnd) {
+            size_t row = pos / static_cast<size_t>(basesPerRow);
+            size_t col = pos % static_cast<size_t>(basesPerRow);
 
-        // Width covers this segment's extent on its first row only
-        size_t firstRowEnd = std::min(
-            seg.startPos + seg.length,
-            (row + 1) * static_cast<size_t>(basesPerRow));
-        float buttonW = static_cast<float>(firstRowEnd - pos) * CELL_WIDTH;
+            size_t rowEnd    = std::min(segEnd, (row + 1) * static_cast<size_t>(basesPerRow));
+            size_t rowBases  = rowEnd - pos;
 
-        ImGui::SetCursorScreenPos({ cellX, cellY });
-        ImGui::InvisibleButton(
-            ("##seg" + std::to_string(si)).c_str(),
-            ImVec2(buttonW, CELL_HEIGHT));
+            float cellX = origin.x + static_cast<float>(col) * CELL_WIDTH;
+            float cellY = origin.y + static_cast<float>(row) * rowHeight;
 
-        if (ImGui::IsItemClicked()) {
-            selectedSegment_ = static_cast<int>(si);
-            selectedContig_  = -1; // clear animation tab selection
-        }
+            ImGui::SetCursorScreenPos({ cellX, cellY });
+            ImGui::InvisibleButton(
+                ("##seg" + std::to_string(si) + "_r" + std::to_string(row)).c_str(),
+                ImVec2(static_cast<float>(rowBases) * CELL_WIDTH, CELL_HEIGHT));
 
-        if (ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            if (seg.type == GenomeSegment::Type::Gap) {
-                ImGui::Text("Gap");
-                ImGui::Text("Length:   %zu Ns", seg.length);
-                ImGui::Text("Position: %zu", seg.startPos);
-            } else {
-                ImGui::Text("Scaffold %zu", seg.index);
-                if (seg.index < session_.scaffolds.size())
-                    ImGui::Text("Contigs:  %zu",
-                        session_.scaffolds[seg.index].contigIndices.size());
-                ImGui::Text("Length:   %zu bases", seg.length);
-                ImGui::Text("Position: %zu", seg.startPos);
+            if (ImGui::IsItemClicked()) {
+                selectedSegment_ = static_cast<int>(si);
+                selectedContig_  = -1;
             }
-            ImGui::EndTooltip();
+
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                if (seg.type == GenomeSegment::Type::Gap) {
+                    ImGui::Text("Gap");
+                    ImGui::Text("Length:   %zu Ns", seg.length);
+                    ImGui::Text("Position: %zu", seg.startPos);
+                } else {
+                    ImGui::Text("Scaffold %zu", seg.index);
+                    if (seg.index < session_.scaffolds.size())
+                        ImGui::Text("Contigs:  %zu",
+                            session_.scaffolds[seg.index].contigIndices.size());
+                    ImGui::Text("Length:   %zu bases", seg.length);
+                    ImGui::Text("Position: %zu", seg.startPos);
+                }
+                ImGui::EndTooltip();
+            }
+
+            pos = rowEnd;
         }
     }
 

@@ -1,9 +1,10 @@
 /*
- * Recorder.h
+ * recorder.h
  * Summary:
- * - Lightweight header-only interface for recording traversal animation steps
- *   into a VisSession during a ContigTraversal.
- * - ContigTraversal holds an optional Recorder* (default nullptr).
+ * - Header-only interface for recording traversal animation steps
+ *   into a VisSession during a contig traversal.
+ * - contig_assembler holds an optional Recorder* (default nullptr).
+ * Important Notes:
  * - The Recorder does not own the VisSession. The caller pipeline is responsible
  *   for keeping the VisSession alive for the duration of the traversal.
  */

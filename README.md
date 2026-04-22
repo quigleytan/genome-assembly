@@ -73,7 +73,7 @@ Regarding the changes I made, I realized that I needed a data structure to store
 made a parent class from `KmerTable` called `OpenAddressingTable` that stores items in a hash table. This was 
 challenging as`KmerTable` was very specialized, as it was designed to store k-mer counts without having to manually
 access data from outside the insert() function. To solve this, I generalized the insert() method to return the item, 
-which allows me to update node information for `DeBruijnGraph`. Now that I couldn't just increment value, I added
+which allows me to update node information for `de_bruijn_graph`. Now that I couldn't just increment value, I added
 virtual functions in my insert() method to allow for different behavior on duplicate and unique insertion cases when
 called from `KmerTable`.
 
@@ -182,17 +182,23 @@ made sure to have graphical, data, and core algorithms separated, as well as sep
 
 ### References
 
-| Module / Area       | Topic                          | Link                                                                 |
-|--------------------|--------------------------------|----------------------------------------------------------------------|
-| General            | Usage of static                | https://www.geeksforgeeks.org/cpp/static-keyword-cpp/               |
-| General            | Documentation guidelines       | https://developer.lsst.io/cpp/api-docs.html                         |
-| General            | Usage of auto                  | https://www.geeksforgeeks.org/cpp/type-inference-in-c-auto-and-decltype/ |
-| General            | Exceptions                     | https://www.geeksforgeeks.org/cpp/how-to-throw-custom-exception-in-cpp/ |
-| DNASequence        | Helper functions               | https://www.w3tutorials.net/blog/what-are-helper-functions-in-c/     |
-| DNASequence        | size_t                         | https://www.geeksforgeeks.org/cpp/difference-between-int-and-size_t-in-cpp/ |
-| DNASequence        | Switch and cases               | https://www.w3schools.com/cpp/cpp_switch.asp                        |
-| KmerEncoder        | Bitshift and masking           | https://www.geeksforgeeks.org/cpp/left-shift-right-shift-operators-c-cpp/ |
-| OpenAddressingTable| Iterator implementation        | https://stackoverflow.com/questions/46431762/how-to-implement-standard-iterators-in-class |
-| DeBruijnGraph      | Usage of auto                  | Reference source from Module 1                                       |
-| DeBruijnGraph      | Use of [[nodiscard]]           | https://stackoverflow.com/questions/76489630/explanation-of-nodiscard-in-c17 |
-| DeBruijnGraph      | Use of explicit                | https://www.geeksforgeeks.org/cpp/use-of-explicit-keyword-in-cpp/    |
+| Module / Area        | Topic                   | Link                                                                 |
+|----------------------|-------------------------|----------------------------------------------------------------------|
+| general              | Usage of static         | https://www.geeksforgeeks.org/cpp/static-keyword-cpp/               |
+| general              | Documentation guidelines | https://developer.lsst.io/cpp/api-docs.html                         |
+| general              | Usage of auto           | https://www.geeksforgeeks.org/cpp/type-inference-in-c-auto-and-decltype/ |
+| general              | Exceptions              | https://www.geeksforgeeks.org/cpp/how-to-throw-custom-exception-in-cpp/ |
+| dna_sequence         | Helper functions        | https://www.w3tutorials.net/blog/what-are-helper-functions-in-c/     |
+| dna_sequence         | size_t                  | https://www.geeksforgeeks.org/cpp/difference-between-int-and-size_t-in-cpp/ |
+| dna_sequence         | Switch and cases        | https://www.w3schools.com/cpp/cpp_switch.asp                        |
+| kmer_encoding        | Bitshift and masking    | https://www.geeksforgeeks.org/cpp/left-shift-right-shift-operators-c-cpp/ |
+| open_addressing_table | Iterator implementation | https://stackoverflow.com/questions/46431762/how-to-implement-standard-iterators-in-class |
+| de_bruijn_graph      | Usage of auto           | Reference source from Module 1                                       |
+| de_bruijn_graph      | Use of [[nodiscard]]    | https://stackoverflow.com/questions/76489630/explanation-of-nodiscard-in-c17 |
+| de_bruijn_graph      | Use of explicit         | https://www.geeksforgeeks.org/cpp/use-of-explicit-keyword-in-cpp/    |
+| general              | Static cast             | https://www.geeksforgeeks.org/cpp/static_cast-in-cpp/   |
+| graphics             | ImGui                   | http://imgui.net/articles/RoadMap.html  |
+| gui                  | ImGui commands          | http://imgui.net/api/index.html  |
+| general              | uint128 conversion      | https://www.geeksforgeeks.org/solidity/explicit-conversions-in-solidity/   |
+| general              | Max value handling      | https://www.geeksforgeeks.org/cpp/integer-literal-in-c-cpp-prefixes-suffixes/   |
+

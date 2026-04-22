@@ -199,12 +199,12 @@ static void writeVisData(const std::vector<ContigAssembler::Contig>& contigs, co
 
 int main() {
     try {
-        const std::string path           = "../data/genomic/" + sequence[7];
+        const std::string path           = "../data/genomic/test.fastq";
         const size_t estimatedTotalBases = 100000;
 
         // Phase 1 (multiple strategy testing option)
 
-        const std::vector<size_t> kValues = {6};
+        const std::vector<size_t> kValues = {15};
 
         const std::vector<std::pair<ResolutionStrategy, std::string>> strategies = {
             { ResolutionStrategy::skip(),   "skip"   },
@@ -238,7 +238,7 @@ int main() {
 
         // Phase 2
 
-        const size_t primaryK = 6;
+        const size_t primaryK = 7;
         const std::string primaryStrategy = "scored";
 
         std::cout << "======================================\n";
@@ -260,10 +260,11 @@ int main() {
             contigs, graph, ResolutionStrategy::scored(), &kTable);
 
         // Write full genome FASTA
+        /*
         writeFullGenomeFasta(
             scaffolder.getScaffolds(), contigs,
             "Escherichia_pseudo_genome",
-            "../data/output/full_reconstructed_genome.fna");
+            "../data/output/full_reconstructed_genome.fna"); */
 
         // Write .visdata to populate session metadata and contig/scaffold structs
         writeVisData(contigs, scaffolder, session, path, primaryStrategy, primaryK);
