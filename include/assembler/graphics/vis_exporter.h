@@ -1,7 +1,7 @@
 /*
  * data_exporter.h
  * Summary:
- * - Serializes a VisSession to a plain-text .visdata file.
+ * - Encodes a VisSession to a plain-text .visdata file.
  * - Called at the end of a pipeline run when visualization is requested.
  * - Line oriented for easier debugging.
  * Important notes:
@@ -32,7 +32,7 @@ public:
      * @param session  The fully populated VisSession to serialize.
      * @param filePath Output file path (e.g. "../Data/Results/run.visdata").
      */
-    static void write(const VisSession& session, const std::string& filePath);
+    static void write(const VisSession & session, const std::string& filePath);
 
 private:
 
@@ -41,7 +41,7 @@ private:
     static constexpr int FORMAT_VERSION = 1;
 
     /**
-     * @brief Encodes a NodeId as "hi:lo" hex string.
+     * @brief Encodes a NodeId as a "hi:lo" hex string.
      * Splits __uint128_t into two uint64_t halves for portable serialization.
      */
     static std::string encodeNodeId(NodeId id);

@@ -1,9 +1,13 @@
 /*
  * open_addressing_table.h
  * Summary:
- * - General linear probing hash table.
+ * - General linear probing hash table with standard insert, and both mutable and
+ *   immutable insert methods.
+ * - Child class (kmer_table) hook functions included for kmer specific insertion
+ *   and counting behavior.
+ * - Iterator class built in for traversal through the table.
  * Important notes:
- * - Find and insert return a pointer to the item.
+ * - Load factor built for 0.5,
  */
 
 #ifndef OPEN_ADDRESSING_TABLE_H

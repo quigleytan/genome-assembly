@@ -1,9 +1,9 @@
 /*
- * VisData.h
+ * vis_data.h
  * Summary:
  * - Shared data structures used by both the assembly pipeline (writing)
- *   and the Visualizer (reading). No external dependencies beyond STL
- *   and KmerTypes.h, so both sides can include this without issues.
+ *   and the visualizer (reading). No external dependencies beyond STL
+ *   and kmer_types.h, so both sides can include this without issues.
  * - NodeId raw values are stored for identity comparisons, but all
  *   human-readable labels are pre-decoded strings, so the Visualizer does
  *   not need to include kmer_encoding.

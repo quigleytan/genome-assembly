@@ -1,13 +1,13 @@
 /*
  * data_loader.h
  * Summary:
- * - Deserializes a .visdata file written by DataExporter into a VisSession.
- * - Called by VisualizerApp at startup when a file is selected.
+ * - Decodes a .visdata file written by DataExporter into a VisSession.
+ * - Called by gui.cpp at startup when a file is selected.
  * Important notes:
  * - NodeId hi:lo hex pairs are decoded back into __uint128_t.
  * - RUN blocks in the contig step section are expanded into individual
  *   BaseAppended steps so contig_view's animator sees a flat step list.
- * - Section order in the file must match DataExporter's write order.
+ * - Section order in the file must match vis_exporter's write order.
  * - Unknown section headers are skipped for forward compatibility.
  */
 

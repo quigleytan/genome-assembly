@@ -1,6 +1,6 @@
 /*
- * ContigScaffolder.h
- * Created by Tanner Quigley
+ * scaffolder.h
+ * Created by Tanner Quigley 3/15/26
  * Summary:
  * - Orders contigs into scaffolds using shared boundary node relationships.
  * - Supports multiple branch resolution strategies for comparison.

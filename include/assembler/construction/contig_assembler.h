@@ -1,5 +1,5 @@
 /*
-* ContigTraversal.h
+ * contig_assembler.h
  * Created by Tanner Quigley on 3/18/2026
  * Summary:
  * - Traverses a DeBruijnGraph to extract contiguous DNA fragments (contigs).
