@@ -1,13 +1,18 @@
 /*
- * VisualizerApp.cpp
+ * gui.cpp
  * Summary:
- * -
+ * - Main visualizer executable. Handles window creation, ImGui setup,
+ *   file loading via path input or native Windows file picker,
+ *   and the main render loop.
  */
 
 #include <iostream>
 #include <string>
 #include <memory>
 #include <chrono>
+
+// Windows native file dialog
+#include <windows.h>
 
 // GLFW + OpenGL
 #include "GLFW/glfw3.h"
@@ -24,10 +29,10 @@
 
 // CONSTANTS
 
-static constexpr int   WINDOW_WIDTH  = 1280;
-static constexpr int   WINDOW_HEIGHT = 800;
-static constexpr char  WINDOW_TITLE[] = "Genome Assembler Visualizer";
-static constexpr char  GLSL_VERSION[] = "#version 330";
+static constexpr int  WINDOW_WIDTH  = 1280;
+static constexpr int  WINDOW_HEIGHT = 800;
+static constexpr char WINDOW_TITLE[] = "Genome Assembler Visualizer";
+static constexpr char GLSL_VERSION[] = "#version 330";
 
 
 // GLFW ERROR
@@ -42,59 +47,40 @@ static void applyStyle() {
     ImGuiStyle& style = ImGui::GetStyle();
     ImGui::StyleColorsDark();
 
-    style.WindowRounding   = 4.0f;
-    style.FrameRounding    = 3.0f;
+    style.WindowRounding    = 4.0f;
+    style.FrameRounding     = 3.0f;
     style.ScrollbarRounding = 3.0f;
-    style.GrabRounding     = 3.0f;
-    style.ItemSpacing      = ImVec2(8.0f, 5.0f);
-    style.FramePadding     = ImVec2(6.0f, 4.0f);
+    style.GrabRounding      = 3.0f;
+    style.ItemSpacing       = ImVec2(8.0f, 5.0f);
+    style.FramePadding      = ImVec2(6.0f, 4.0f);
 
-    // Slightly warmer background so colored bars pop
     ImVec4* colors = style.Colors;
-    colors[ImGuiCol_WindowBg]  = ImVec4(0.12f, 0.12f, 0.14f, 1.00f);
-    colors[ImGuiCol_ChildBg]   = ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
-    colors[ImGuiCol_FrameBg]   = ImVec4(0.18f, 0.18f, 0.22f, 1.00f);
-    colors[ImGuiCol_SliderGrab]= ImVec4(0.30f, 0.60f, 0.90f, 1.00f);
-    colors[ImGuiCol_Button]    = ImVec4(0.22f, 0.22f, 0.28f, 1.00f);
+    colors[ImGuiCol_WindowBg]      = ImVec4(0.12f, 0.12f, 0.14f, 1.00f);
+    colors[ImGuiCol_ChildBg]       = ImVec4(0.10f, 0.10f, 0.12f, 1.00f);
+    colors[ImGuiCol_FrameBg]       = ImVec4(0.18f, 0.18f, 0.22f, 1.00f);
+    colors[ImGuiCol_SliderGrab]    = ImVec4(0.30f, 0.60f, 0.90f, 1.00f);
+    colors[ImGuiCol_Button]        = ImVec4(0.22f, 0.22f, 0.28f, 1.00f);
     colors[ImGuiCol_ButtonHovered] = ImVec4(0.30f, 0.30f, 0.40f, 1.00f);
 }
 
-// LOAD PROMPT
+// FILE DIALOG
 
-static std::string renderLoadPrompt() {
-    static char pathBuf[512] = "";
-    std::string result;
+static std::string openFileDialog() {
+    char pathBuf[MAX_PATH] = "";
 
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::SetNextWindowPos(
-        ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
-        ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(480, 140), ImGuiCond_Always);
+    OPENFILENAMEA ofn = {};
+    ofn.lStructSize   = sizeof(ofn);
+    ofn.hwndOwner     = nullptr;
+    ofn.lpstrFilter   = "Visdata Files\0*.visdata\0All Files\0*.*\0";
+    ofn.lpstrFile     = pathBuf;
+    ofn.nMaxFile      = MAX_PATH;
+    ofn.lpstrTitle    = "Open .visdata file";
+    ofn.Flags         = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 
-    ImGui::Begin("Load .visdata file",
-                 nullptr,
-                 ImGuiWindowFlags_NoResize |
-                 ImGuiWindowFlags_NoMove   |
-                 ImGuiWindowFlags_NoCollapse);
+    if (GetOpenFileNameA(&ofn))
+        return std::string(pathBuf);
 
-    ImGui::TextWrapped("Enter the path to a .visdata file produced by the assembly pipeline:");
-    ImGui::Spacing();
-
-    // Focus the input field automatically
-    ImGui::SetNextItemWidth(-1);
-    bool pressedEnter = ImGui::InputText(
-        "##filepath", pathBuf, sizeof(pathBuf),
-        ImGuiInputTextFlags_EnterReturnsTrue);
-
-    ImGui::Spacing();
-
-    bool load = pressedEnter || ImGui::Button("Load", ImVec2(80, 0));
-
-    if (load && pathBuf[0] != '\0')
-        result = std::string(pathBuf);
-
-    ImGui::End();
-    return result;
+    return "";
 }
 
 // ERROR OVERLAY
@@ -106,10 +92,10 @@ static void renderErrorOverlay(const std::string& message) {
     ImGui::SetNextWindowBgAlpha(0.80f);
     ImGui::Begin("##error",
                  nullptr,
-                 ImGuiWindowFlags_NoDecoration   |
-                 ImGuiWindowFlags_NoInputs        |
-                 ImGuiWindowFlags_NoNav           |
-                 ImGuiWindowFlags_NoMove          |
+                 ImGuiWindowFlags_NoDecoration  |
+                 ImGuiWindowFlags_NoInputs       |
+                 ImGuiWindowFlags_NoNav          |
+                 ImGuiWindowFlags_NoMove         |
                  ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::TextColored(ImVec4(1.0f, 0.35f, 0.35f, 1.0f), "Error: %s", message.c_str());
     ImGui::End();
@@ -117,31 +103,81 @@ static void renderErrorOverlay(const std::string& message) {
 
 // MENU BAR
 
-static std::string renderMenuBar(const std::string& currentFile) {
-    std::string result;
-
+static void renderMenuBar(const std::string& currentFile, bool& showLoadPrompt) {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Load .visdata..."))
-                result = "__SHOW_PROMPT__"; // Sentinel to open the prompt
+                showLoadPrompt = true;
             ImGui::Separator();
             if (ImGui::MenuItem("Quit"))
-                glfwSetWindowShouldClose(
-                    glfwGetCurrentContext(), GLFW_TRUE);
+                glfwSetWindowShouldClose(glfwGetCurrentContext(), GLFW_TRUE);
             ImGui::EndMenu();
         }
 
-        // Show the current filename on the right side of the menu bar
         if (!currentFile.empty()) {
             float textWidth = ImGui::CalcTextSize(currentFile.c_str()).x;
-            ImGui::SetCursorPosX(
-                ImGui::GetContentRegionMax().x - textWidth - 8.0f);
+            ImGui::SetCursorPosX(ImGui::GetContentRegionMax().x - textWidth - 8.0f);
             ImGui::TextDisabled("%s", currentFile.c_str());
         }
 
         ImGui::EndMainMenuBar();
     }
+}
 
+// LOAD PROMPT
+// Returns a path to load if the user confirmed, empty string otherwise.
+
+static std::string renderLoadPrompt(bool& showPrompt) {
+    std::string result;
+
+    // Center the popup
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos(
+        ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+        ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(520, 130), ImGuiCond_Always);
+
+    ImGui::Begin("Load .visdata file",
+                 &showPrompt,
+                 ImGuiWindowFlags_NoResize   |
+                 ImGuiWindowFlags_NoMove     |
+                 ImGuiWindowFlags_NoCollapse);
+
+    // Persistent text buffer across frames
+    static char pathBuf[512] = "";
+
+    ImGui::TextDisabled("Enter a path or use Browse to pick a file:");
+    ImGui::Spacing();
+
+    // Text input — takes up remaining width minus Browse button and Load button
+    ImGui::SetNextItemWidth(-200.0f);
+    bool pressedEnter = ImGui::InputText(
+        "##filepath", pathBuf, sizeof(pathBuf),
+        ImGuiInputTextFlags_EnterReturnsTrue);
+
+    ImGui::SameLine();
+
+    // Browse button — opens the native Windows file picker
+    if (ImGui::Button("Browse...", ImVec2(90, 0))) {
+        std::string picked = openFileDialog();
+        if (!picked.empty()) {
+            // Copy the picked path into the text buffer so the user can see it
+            strncpy(pathBuf, picked.c_str(), sizeof(pathBuf) - 1);
+            pathBuf[sizeof(pathBuf) - 1] = '\0';
+        }
+    }
+
+    ImGui::SameLine();
+
+    // Load button — confirms whatever is in the text field
+    bool load = pressedEnter || ImGui::Button("Load", ImVec2(80, 0));
+    if (load && pathBuf[0] != '\0') {
+        result    = std::string(pathBuf);
+        pathBuf[0] = '\0'; // clear for next open
+        showPrompt = false;
+    }
+
+    ImGui::End();
     return result;
 }
 
@@ -149,7 +185,6 @@ static std::string renderMenuBar(const std::string& currentFile) {
 
 int main(int argc, char** argv) {
 
-    // Initiation steps
     std::string initialPath;
     if (argc >= 2)
         initialPath = argv[1];
@@ -160,11 +195,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // OpenGL 3.3 core profile:  required by imgui_impl_opengl3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // required on macOS
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     GLFWwindow* window = glfwCreateWindow(
         WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, nullptr, nullptr);
@@ -175,7 +209,7 @@ int main(int argc, char** argv) {
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // VSync - caps frame rate to monitor refresh
+    glfwSwapInterval(1);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -188,19 +222,18 @@ int main(int argc, char** argv) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(GLSL_VERSION);
 
-    std::unique_ptr<VisSession>   session;
-    std::unique_ptr<ContigView>   contigView;
-    std::string                   loadedFilePath;
-    std::string                   errorMessage;
-    float                         errorTimer    = 0.0f;
-    bool                          showPrompt    = initialPath.empty();
+    std::unique_ptr<VisSession> session;
+    std::unique_ptr<ContigView> contigView;
+    std::string                 loadedFilePath;
+    std::string                 errorMessage;
+    float                       errorTimer  = 0.0f;
+    bool                        showPrompt  = initialPath.empty();
 
-    // Load initial file
     auto tryLoad = [&](const std::string& path) {
+        if (path.empty()) return;
         try {
             auto s = std::make_unique<VisSession>(VisLoader::load(path));
             auto v = std::make_unique<ContigView>(*s);
-            // Only commit once both succeed
             session        = std::move(s);
             contigView     = std::move(v);
             loadedFilePath = path;
@@ -208,65 +241,54 @@ int main(int argc, char** argv) {
             showPrompt = false;
         } catch (const std::exception& e) {
             errorMessage = e.what();
-            errorTimer   = 4.0f; // show error for 4 seconds
+            errorTimer   = 4.0f;
         }
     };
 
     if (!initialPath.empty())
         tryLoad(initialPath);
 
-    // Frame timing
     using Clock     = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
     TimePoint lastFrame = Clock::now();
 
-    // Frame loop
     while (!glfwWindowShouldClose(window)) {
 
         glfwPollEvents();
 
-        // Delta time
         TimePoint now      = Clock::now();
         float     deltaTime = std::chrono::duration<float>(now - lastFrame).count();
-        lastFrame = now;
-        deltaTime = std::min(deltaTime, 0.1f); // clamp to avoid spiral on hang
+        lastFrame  = now;
+        deltaTime  = std::min(deltaTime, 0.1f);
 
-        // ImGui new frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Menu bar
-        std::string menuAction = renderMenuBar(loadedFilePath);
-        if (menuAction == "__SHOW_PROMPT__")
-            showPrompt = true;
+        renderMenuBar(loadedFilePath, showPrompt);
 
-        // Load prompt
         if (showPrompt) {
-            std::string promptResult = renderLoadPrompt();
-            if (!promptResult.empty())
-                tryLoad(promptResult);
+            std::string loadResult = renderLoadPrompt(showPrompt);
+            if (!loadResult.empty())
+                tryLoad(loadResult);
         }
 
-        // Error overlay
         if (errorTimer > 0.0f) {
             renderErrorOverlay(errorMessage);
             errorTimer -= deltaTime;
         }
 
-        // Main view
         if (contigView) {
             contigView->update(deltaTime);
             contigView->render();
         } else if (!showPrompt) {
-            // No file loaded and prompt is dismissed
             ImGuiIO& imio = ImGui::GetIO();
             ImGui::SetNextWindowPos(
                 ImVec2(imio.DisplaySize.x * 0.5f, imio.DisplaySize.y * 0.5f),
                 ImGuiCond_Always, ImVec2(0.5f, 0.5f));
             ImGui::Begin("##hint",
                          nullptr,
-                         ImGuiWindowFlags_NoDecoration |
+                         ImGuiWindowFlags_NoDecoration     |
                          ImGuiWindowFlags_AlwaysAutoResize |
                          ImGuiWindowFlags_NoMove);
             ImGui::TextDisabled("No file loaded.");
@@ -274,7 +296,6 @@ int main(int argc, char** argv) {
             ImGui::End();
         }
 
-        // Render step
         ImGui::Render();
 
         int displayW, displayH;
@@ -287,7 +308,6 @@ int main(int argc, char** argv) {
         glfwSwapBuffers(window);
     }
 
-    // Deconstructors
     contigView.reset();
     session.reset();
 
