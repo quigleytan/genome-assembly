@@ -1,4 +1,4 @@
-# De Bruijn Genome Assembler
+# Genome Assembler
 
 A C++17 genome assembly toolkit built from scratch: 2-bit k-mer encoding, a
 De Bruijn graph, multi-phase contig assembly, scaffold resolution, and a
@@ -31,9 +31,11 @@ against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 
 ## Overview
 
-This project reconstructs a DNA sequence from short, overlapping reads —
-the same problem real sequencing pipelines solve, at a scale meant for
-learning and experimentation rather than production use.
+This project reconstructs a DNA sequence from short, overlapping reads in FASTA or
+FASTQ format. Eulerian reconstruction was used as a proof-of-concept for the encoding, 2-bit
+k-mer hash tables, De Bruijn graphs and traversals, and FASTA file i/o. The contig and scaffolding
+assembly resembles real life bioinformatics pipelines more closely, as it is more tolerant of input data
+variability.
 
 Given a FASTA/FASTQ input, the pipeline:
 
@@ -104,7 +106,7 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 
 *(Screenshots/GIF coming once gap resolution is in — see roadmap below.)*
 
-## Validated Results
+## Test Results
 
 | Genome | Approx. size | Assembly approach | Result |
 |---|---|---|---|
@@ -198,8 +200,6 @@ Being upfront about the current state rather than hiding it:
   silently truncating node IDs for k > 33
 - `ContigAssembler` doesn't yet initiate walks from sink nodes in every
   case, which is the main source of incomplete traversal on complex graphs
-- Missing `explicit` on `EulerianAssembler`'s single-argument constructor
-- `data_list.cpp` exposes a mutable global vector — needs encapsulating
 
 **In progress**
 - Gap size estimation between scaffolds via k-mer frequency drop
@@ -231,10 +231,6 @@ design:
   whether the *next* node is a boundary (branch point or start-node revisit)
   **before** appending its character — otherwise the boundary base gets
   double-counted between the contig that arrives and the one that departs.
-- **`ACGTACGT` isn't a bug:** at k=5 it forms a graph cycle because the
-  first and last 4-mers coincide. That's a property of the sequence, not
-  broken traversal logic — a useful reminder that De Bruijn graphs encode
-  *k-mer* structure, not sequence position.
 - **k selection matters more than it looks:** k ≥ read length collapses the
   graph to nothing; k too small causes excessive spurious branching from
   short repeated k-mers recurring by chance. There's a real sweet spot per
@@ -242,9 +238,7 @@ design:
 
 ## License
 
-_Not yet licensed — add a `LICENSE` file (MIT is a common choice for
-portfolio projects) before making the repo public if you want to state
-usage terms explicitly._
+_Not yet licensed_
 
 ---
 
