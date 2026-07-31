@@ -4,7 +4,7 @@ A C++17 genome assembly toolkit built from scratch: 2-bit k-mer encoding, a
 De Bruijn graph, multi-phase contig assembly, scaffold resolution, and a
 standalone OpenGL/ImGui visualizer for inspecting the assembly process.
 
-No third-party bioinformatics libraries - the encoding scheme, hash table,
+No third-party bioinformatics libraries included. The encoding scheme, hash table,
 graph, and traversal algorithms are all original implementations, validated
 against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 *E. coli* K-12).
@@ -31,8 +31,8 @@ against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 
 ## Overview
 
-This project reconstructs a DNA sequence from short, overlapping reads in FASTA or
-FASTQ format. Eulerian reconstruction was used as a proof-of-concept for the encoding, 2-bit
+This project reconstructs a DNA sequence from short, overlapping reads in FASTQ format. 
+Eulerian reconstruction was used as a proof-of-concept for the encoding, 2-bit
 k-mer hash tables, De Bruijn graphs and traversals, and FASTA file i/o. The contig and scaffolding
 assembly resembles real life bioinformatics pipelines more closely, as it is more tolerant of input data
 variability.
@@ -42,7 +42,7 @@ Given a FASTA/FASTQ input, the pipeline:
 1. Encodes every k-mer into a 2-bit-packed `__uint128_t` (supports k up to 63)
 2. Builds a De Bruijn graph, where nodes are k-1 mers and edges are k-mers
 3. Walks the graph to assemble maximal non-branching paths (contigs)
-4. Orders and links contigs into scaffolds using shared boundary k-mers
+4. Orders and links contigs into scaffolds using shared boundary k-mers and scoring strategies
 5. Exports the full run (graph stats, contigs, scaffolds, and a step-by-step
    animation trace) to a `.visdata` file
 6. Optionally replays that file in a separate GUI to visualize assembly
