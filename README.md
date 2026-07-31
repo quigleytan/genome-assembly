@@ -4,7 +4,7 @@ A C++17 genome assembly toolkit built from scratch: 2-bit k-mer encoding, a
 De Bruijn graph, multi-phase contig assembly, scaffold resolution, and a
 standalone OpenGL/ImGui visualizer for inspecting the assembly process.
 
-No third-party bioinformatics libraries — the encoding scheme, hash table,
+No third-party bioinformatics libraries - the encoding scheme, hash table,
 graph, and traversal algorithms are all original implementations, validated
 against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 *E. coli* K-12).
@@ -48,9 +48,9 @@ Given a FASTA/FASTQ input, the pipeline:
 6. Optionally replays that file in a separate GUI to visualize assembly
 
 Two assembly strategies are implemented for comparison:
-- **Eulerian path/circuit** (Hierholzer's algorithm) — exact reconstruction,
+- **Eulerian path/circuit** (Hierholzer's algorithm) - exact reconstruction,
   but only viable while repeats stay shorter than k
-- **Contig-based multi-phase traversal** — the approach that scales to
+- **Contig-based multi-phase traversal** - the approach that scales to
   real genomes with repeats longer than k
 
 ## Pipeline
@@ -88,14 +88,14 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 - Two-phase contig traversal: branch points and source nodes first, then
   isolated cycles unreachable from any external entry point
 - Scaffold resolution with three interchangeable strategies:
-    - **skip** — never resolve ambiguous branches
-    - **greedy** — take the first available edge
-    - **scored** — weighted combination of contig length, k-mer frequency,
+    - **skip** - never resolve ambiguous branches
+    - **greedy** - take the first available edge
+    - **scored** - weighted combination of contig length, k-mer frequency,
       and overlap quality
 - N50 and assembly statistics reporting at every stage
 
 **Visualizer**
-- Independent executable that reads a `.visdata` file — no dependency on
+- Independent executable that reads a `.visdata` file - no dependency on
   the assembly pipeline at runtime
 - **Assembly Animation** tab: scrubbable, speed-adjustable playback of the
   contig-by-contig traversal, grouped by scaffold
@@ -104,7 +104,7 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 - Built on Dear ImGui + GLFW + OpenGL 3.3, fetched via CMake `FetchContent`
   (no manual dependency setup)
 
-*(Screenshots/GIF coming once gap resolution is in — see roadmap below.)*
+*(Screenshots/GIF coming once gap resolution is in - see roadmap below.)*
 
 ## Test Results
 
@@ -118,7 +118,7 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 | Escherichia coli K-12 | ~4.6 Mb | Contig-based | Scaffolded |
 
 The practical ceiling for **complete, exact** Eulerian assembly sits
-somewhere between ~48 kb and ~230 kb for the genomes tested — past that,
+somewhere between ~48 kb and ~230 kb for the genomes tested - past that,
 repeats longer than k-1 make a single unambiguous path impossible, which is
 exactly why the contig/scaffold pipeline exists.
 
@@ -144,7 +144,7 @@ data/
 
 **Requirements**
 - CMake ≥ 3.14
-- A compiler with `__uint128_t` support — **GCC or Clang** (MSVC is not
+- A compiler with `__uint128_t` support - **GCC or Clang** (MSVC is not
   supported; this project uses MinGW on Windows)
 - Internet access on first build (CMake `FetchContent` pulls GLFW, GLM,
   and Dear ImGui automatically)
@@ -195,7 +195,7 @@ Being upfront about the current state rather than hiding it:
 **Open bugs (tracked, not yet fixed)**
 - Test files (`InitializationTests.cpp`, `ProcessingTests.cpp`,
   `ConstructionTests.cpp`) reference stale include paths and outdated
-  class names from before a project restructure — **highest priority fix**
+  class names from before a project restructure - **highest priority fix**
 - `NodeNotFoundException` takes `uint64_t` instead of `__uint128_t`,
   silently truncating node IDs for k > 33
 - `ContigAssembler` doesn't yet initiate walks from sink nodes in every
@@ -203,14 +203,14 @@ Being upfront about the current state rather than hiding it:
 
 **In progress**
 - Gap size estimation between scaffolds via k-mer frequency drop
-  analysis (`gap_estimation.h`/`.cpp` — currently stubs, already wired
+  analysis (`gap_estimation.h`/`.cpp` - currently stubs, already wired
   into the build)
 - Gap filling using the estimated size (`gap_filling.h`/`.cpp`)
 
 **Planned**
 - K-mer frequency filtering (suppress low-count/error k-mers before
   graph construction)
-- Gene finding — starting with ORF (open reading frame) detection as
+- Gene finding - starting with ORF (open reading frame) detection as
   an approachable entry point, with HMM-based gene prediction as a
   longer-term stretch goal
 
@@ -225,11 +225,11 @@ design:
 - **Reference invalidation after rehash:** the open-addressing table's
   `rehash()` can move every element, which silently broke code that held a
   pointer/reference across an insert. The fix is a consistent two-pass
-  pattern — insert all keys first, *then* look each one up — used in both
+  pattern - insert all keys first, *then* look each one up - used in both
   adjacency-list initialization and `DeBruijnGraph::addKmer`.
 - **Boundary-check ordering in contig walks:** `walkContig` has to check
   whether the *next* node is a boundary (branch point or start-node revisit)
-  **before** appending its character — otherwise the boundary base gets
+  **before** appending its character - otherwise the boundary base gets
   double-counted between the contig that arrives and the one that departs.
 - **k selection matters more than it looks:** k ≥ read length collapses the
   graph to nothing; k too small causes excessive spurious branching from

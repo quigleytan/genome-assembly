@@ -199,7 +199,7 @@ static void writeVisData(const std::vector<ContigAssembler::Contig>& contigs, co
 
 int main() {
     try {
-        const std::string path           = "../data/genomic/test.fastq";
+        const std::string path           = "../data/genomic/[7]short reads test.fastq";
         const size_t estimatedTotalBases = 100000;
 
         // Phase 1 (multiple strategy testing option)
