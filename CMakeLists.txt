@@ -73,6 +73,7 @@ add_assembler_app(ConstructionTests     tests/ConstructionTests.cpp ${CORE_SOURC
 # Visualizer
 add_assembler_app(Visualizer
         src/graphics/gui.cpp
+        src/graphics/assembly_runner.cpp
         src/graphics/contig_view.cpp
         src/graphics/vis_exporter.cpp
         src/graphics/vis_loader.cpp
