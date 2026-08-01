@@ -8,10 +8,10 @@
  * - All contigs include k-1 overlapping bases at boundaries for scaffolding.
  * Important notes:
  * - Operates on an already-constructed DeBruijnGraph passed by reference.
- * - Contig sequences are produced in overlap mode — boundary nodes contribute
+ * - Contig sequences are produced in overlap mode - boundary nodes contribute
  *   their full k-1 chars to adjacent contigs.
  * - recorder_ is optional (default nullptr). When null, all recording calls
- *   are no-ops — zero overhead for normal non-visualization pipeline runs.
+ *   are no-ops - zero overhead for normal non-visualization pipeline runs.
  * TODO: Build in handling for starting traversal at "sinks".
  */
 
@@ -41,7 +41,7 @@ private:
     DeBruijnGraph& graph_;                                     // Graph to be traversed.
     HashTable<NodeId, std::vector<NodeId>> adjCopy_; // Table of all nodes and neighbor lists.
     std::vector<Contig> contigs_;                              // List of all contigs derived from graph_.
-    Recorder* recorder_;                                       // Optional — null in normal pipeline runs.
+    Recorder* recorder_;                                       // Optional - null in normal pipeline runs.
 
     /**
      * @brief Initializes adjCopy_, table of ID's with neighbor lists as values.
@@ -67,7 +67,7 @@ private:
      * ContigFinished steps for the animation.
      *
      * @param startNode   The encoded k-1 mer to begin the walk from.
-     * @param contigIndex Index this contig will occupy in contigs_ — passed
+     * @param contigIndex Index this contig will occupy in contigs_ - passed
      *                    to the recorder so steps reference the right contig.
      * @return Contig struct containing the assembled sequence, start/end nodes,
      *         and circularity flag.
@@ -91,7 +91,7 @@ public:
      *
      * @param g        Input graph to be traversed.
      * @param recorder Optional recorder for visualization. Pass nullptr (default)
-     *                 for normal pipeline runs — all recording calls become no-ops.
+     *                 for normal pipeline runs - all recording calls become no-ops.
      */
     explicit ContigAssembler(DeBruijnGraph& g, Recorder* recorder = nullptr);
 

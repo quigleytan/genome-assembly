@@ -53,7 +53,7 @@ static size_t findRotationOffset(const std::string& original, const std::string&
 // PIPELINE FUNCTIONS
 
 /**
- * @brief Stage 1 — Load a FASTA file into a DNASequence.
+ * @brief Stage 1 - Load a FASTA file into a DNASequence.
  * @param path Path to the FASTA file.
  * @return DNASequence parsed from the file.
  * @throws std::runtime_error if the file cannot be opened or is empty.
@@ -73,7 +73,7 @@ static DNASequence loadGenome(const std::string& path) {
 }
 
 /**
- * @brief Stage 2 — Build a De Bruijn graph from a circular DNA sequence.
+ * @brief Stage 2 - Build a De Bruijn graph from a circular DNA sequence.
  *
  * Circularizes the sequence by appending the first k-1 bases, encodes all
  * k-mers into a kmer_table, then inserts them into a DeBruijnGraph pre-sized
@@ -102,7 +102,7 @@ static DeBruijnGraph buildGraph(const std::string& sequence, int k) {
 }
 
 /**
- * @brief Stage 3 — Traverse the graph and reconstruct the genome string.
+ * @brief Stage 3 - Traverse the graph and reconstruct the genome string.
  *
  * Runs Hierholzer's algorithm, reconstructs the assembled string, then
  * normalizes it back to the original start position using a rotation
@@ -136,7 +136,7 @@ static std::string assembleGenome(DeBruijnGraph& graph,
 }
 
 /**
- * @brief Stage 4 — Report assembly results to stdout.
+ * @brief Stage 4 - Report assembly results to stdout.
  * @param original  Original DNASequence loaded from file.
  * @param assembled Assembled string produced by assembleGenome().
  */

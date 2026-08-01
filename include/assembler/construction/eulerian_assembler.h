@@ -6,7 +6,7 @@
  *   Hierholzer's algorithm, visiting every edge exactly once.
  * - Reconstructs a DNA sequence string from the resulting node path.
  * Important notes:
- * - Requires a valid Eulerian graph — exactly one node with outDegree - inDegree == 1
+ * - Requires a valid Eulerian graph - exactly one node with outDegree - inDegree == 1
  *   for a path, or all nodes balanced for a circuit.
  * - computePath() must be called before getPath() or reconstructGenome().
  */
@@ -58,7 +58,7 @@ public:
      * @brief Computes an Eulerian path or circuit using Hierholzer's algorithm.
      *
      * Traverses the De Bruijn graph visiting every edge exactly once. Begins
-     * from the start node determined by findStartNode() — a node with
+     * from the start node determined by findStartNode() - a node with
      * outDegree - inDegree == 1 for a path, or any node for a circuit.
      *
      * At each step, if the current node has remaining edges, one edge is

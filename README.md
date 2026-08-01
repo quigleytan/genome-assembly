@@ -104,9 +104,9 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 - Built on Dear ImGui + GLFW + OpenGL 3.3, fetched via CMake `FetchContent`
   (no manual dependency setup)
 
-*(Screenshots/GIF coming once gap resolution is in - see roadmap below.)*
+*(Screenshots/GIF coming once user interface for running pipelines is finalized)*
 
-## Test Results
+## Eulerian Reconstruction Test Results
 
 | Genome | Approx. size | Assembly approach | Result |
 |---|---|---|---|
@@ -208,11 +208,13 @@ Being upfront about the current state rather than hiding it:
 - Gap filling using the estimated size (`gap_filling.h`/`.cpp`)
 
 **Planned**
+- User interface for running pipelines (currently only the executables are available)
 - K-mer frequency filtering (suppress low-count/error k-mers before
   graph construction)
 - Gene finding - starting with ORF (open reading frame) detection as
   an approachable entry point, with HMM-based gene prediction as a
   longer-term stretch goal
+
 
 ## Development Notes
 

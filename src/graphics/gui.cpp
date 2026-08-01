@@ -149,7 +149,7 @@ static std::string renderLoadPrompt(bool& showPrompt) {
     ImGui::TextDisabled("Enter a path or use Browse to pick a file:");
     ImGui::Spacing();
 
-    // Text input — takes up remaining width minus Browse button and Load button
+    // Text input - takes up remaining width minus Browse button and Load button
     ImGui::SetNextItemWidth(-200.0f);
     bool pressedEnter = ImGui::InputText(
         "##filepath", pathBuf, sizeof(pathBuf),
@@ -157,7 +157,7 @@ static std::string renderLoadPrompt(bool& showPrompt) {
 
     ImGui::SameLine();
 
-    // Browse button — opens the native Windows file picker
+    // Browse button - opens the native Windows file picker
     if (ImGui::Button("Browse...", ImVec2(90, 0))) {
         std::string picked = openFileDialog();
         if (!picked.empty()) {
@@ -169,7 +169,7 @@ static std::string renderLoadPrompt(bool& showPrompt) {
 
     ImGui::SameLine();
 
-    // Load button — confirms whatever is in the text field
+    // Load button - confirms whatever is in the text field
     bool load = pressedEnter || ImGui::Button("Load", ImVec2(80, 0));
     if (load && pathBuf[0] != '\0') {
         result    = std::string(pathBuf);

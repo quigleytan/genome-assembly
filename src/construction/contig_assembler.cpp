@@ -128,7 +128,7 @@ void ContigAssembler::computeContigs() {
     contigs_.clear();
     initializeAdjacency();
 
-    // Phase 1 — branch points and source nodes
+    // Phase 1 - branch points and source nodes
     for (NodeId node : graph_.getAllNodes()) {
         const auto* data = graph_.findNode(node);
 
@@ -148,7 +148,7 @@ void ContigAssembler::computeContigs() {
         }
     }
 
-    // Stage 2 — isolated cycles
+    // Stage 2 - isolated cycles
     handleIsolatedCycles();
 }
 

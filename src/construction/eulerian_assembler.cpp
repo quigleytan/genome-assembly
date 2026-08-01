@@ -91,7 +91,7 @@ const std::vector<NodeId>& EulerianAssembler::getPath() const {
 
 std::string EulerianAssembler::reconstructGenome(bool isCircuit) const {
     if (path_.empty())
-        throw std::runtime_error("Path is empty — call computePath() first");
+        throw std::runtime_error("Path is empty - call computePath() first");
 
     const size_t nodeLen = graph_.getK() - 1;
     std::string genome = KmerEncoding::decode(path_.front(), nodeLen);

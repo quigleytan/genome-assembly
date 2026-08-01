@@ -72,7 +72,7 @@ struct ScaffoldEntry {
 
     size_t contigIndex;          // Index into the contigs vector
     int    gapAfter;             // UNKNOWN_GAP (-1) or DIRECT_OVERLAP (0)
-    double score = 0.0;          // Score assigned by scoreContig() — 0.0 if unscored
+    double score = 0.0;          // Score assigned by scoreContig() - 0.0 if unscored
 };
 
 // SCAFFOLD
