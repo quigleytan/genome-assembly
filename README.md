@@ -120,10 +120,15 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 </table>
 
 **Results View**
+
 <table>
 <tr>
-<td><img src="media/contig_view.png" width="1279"></td>
-<td><img src="media/genome_animation.gif" width="1279"></td>
+<td align="center">
+<img src="media/contig_view.png" width="450">
+</td>
+<td align="center">
+<img src="media/genome_animation.gif" width="450">
+</td>
 </tr>
 </table>
 
