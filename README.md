@@ -171,8 +171,8 @@ data/
   and Dear ImGui automatically)
 
 ```bash
-https://github.com/quigleytan/quigleytan_genome_assembler.git
-cd <repo-name>
+git clone https://github.com/quigleytan/quigleytan_genome_assembler.git
+cd quigleytan_genome_assembler
 cmake -B build -G "MinGW Makefiles"   # or your preferred generator
 cmake --build build
 ```
@@ -197,16 +197,7 @@ graph/contig/scaffold statistics to stdout as it runs.
 **Run the visualizer**
 
 ```bash
-./Visualizer data/graphical/assembly_k6_scored.visdata
-# or launch with no argument and use File > Load .visdata... 
-```
-
-**Run tests**
-
-```bash
-./InitializationTests
-./ProcessingTests
-./ConstructionTests
+./Visualizer
 ```
 
 ## Known Issues & Roadmap
