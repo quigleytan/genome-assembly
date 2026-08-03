@@ -123,11 +123,11 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 
 <table>
 <tr>
-<td align="center">
-<img src="media/contig_view.png" width="450">
+<td>
+<img src="media/contig_view.png" height="300">
 </td>
-<td align="center">
-<img src="media/genome_animation.gif" width="450">
+<td>
+<img src="media/genome_animation.gif" height="300">
 </td>
 </tr>
 </table>
