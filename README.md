@@ -1,4 +1,4 @@
-# Genome Assembler
+# C++ Genome Assembly & Visualization Toolkit
 
 Built as a deep-dive into the algorithms behind real bioinformatics tools like SPAdes and Velvet, implementing every
 component from scratch rather than wrapping existing libraries.
