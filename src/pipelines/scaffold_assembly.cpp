@@ -7,22 +7,16 @@
 #include "assembler/core/de_bruijn_graph.h"
 #include "assembler/core/vis_data.h"
 #include "assembler/core/recorder.h"
-#include "assembler/core/data_list.h"
 
 #include "assembler/construction/scaffolder.h"
 #include "assembler/construction/contig_assembler.h"
-
-#include "assembler/graphics/vis_exporter.h"
-
 #include "assembler/io/sequence_reader.h"
 
 // CONSTANTS
 
-
 static constexpr size_t UNKNOWN_GAP_NS    = 10;
 static constexpr size_t INTER_SCAFFOLD_NS = 10;
 static constexpr size_t FASTA_LINE_WIDTH  = 60;
-
 
 // STAGE 1 - Load reads
 
@@ -186,13 +180,15 @@ static void writeVisData(const std::vector<ContigAssembler::Contig>& contigs, co
     scaffolder.toVisSession(session, k - 1);
 
     // Visdata file output location
+
     const std::string visPath =
-        "../data/graphical/assembly_k" + std::to_string(k) + "_" + strategyName + ".visdata";
+        "../data/results/assembly_k" + std::to_string(k) + "_" + strategyName + ".visdata";
 
-    VisExporter::write(session, visPath);
+    const std::string fastaPath =
+        "../data/results/full_reconstructed_genome.fna";
 
-    std::cout << "\nVisualization data written to: " << visPath << "\n";
-    std::cout << "Launch with: Visualizer.exe " << visPath << "\n";
+    const std::string scaffoldFastaPath =
+        "../data/results/scaffolds_k" + std::to_string(k) + "_" + strategyName + ".fna";
 }
 
 // MAIN PIPELINE
@@ -258,13 +254,6 @@ int main() {
 
         Scaffolder scaffolder = buildScaffolds(
             contigs, graph, ResolutionStrategy::scored(), &kTable);
-
-        // Write full genome FASTA
-        /*
-        writeFullGenomeFasta(
-            scaffolder.getScaffolds(), contigs,
-            "Escherichia_pseudo_genome",
-            "../data/output/full_reconstructed_genome.fna"); */
 
         // Write .visdata to populate session metadata and contig/scaffold structs
         writeVisData(contigs, scaffolder, session, path, primaryStrategy, primaryK);

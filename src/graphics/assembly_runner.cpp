@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <filesystem>
 
 #include "assembler/io/sequence_reader.h"
 #include "assembler/core/kmer_table.h"
@@ -27,7 +28,6 @@
 
 
 // CONSTANTS
-
 static constexpr size_t INTER_SCAFFOLD_NS = 10;
 static constexpr size_t UNKNOWN_GAP_NS    = 10;
 static constexpr size_t FASTA_LINE_WIDTH  = 60;
@@ -127,9 +127,12 @@ static std::string writeOutputs(
     size_t k,
     AssemblyProgress& progress)
 {
-    progress.setMessage("Writing output files...");
-    progress.progress = 0.2f;
 
+    std::filesystem::path outDir(outputDir);
+    std::error_code ec;
+    std::filesystem::create_directories(outDir, ec);
+
+    progress.progress = 0.2f;
     session.k            = k;
     session.sourceFile   = inputPath;
     session.strategyName = strategyName;

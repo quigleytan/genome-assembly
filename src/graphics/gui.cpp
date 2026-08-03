@@ -39,9 +39,7 @@ static constexpr int  WINDOW_HEIGHT = 800;
 static constexpr char WINDOW_TITLE[] = "Genome Assembler Visualizer";
 static constexpr char GLSL_VERSION[] = "#version 330";
 
-
 // GLFW ERROR
-
 
 static void glfwErrorCallback(int error, const char* description) {
     std::cerr << "GLFW error " << error << ": " << description << "\n";
@@ -70,7 +68,6 @@ static void applyStyle() {
 }
 
 // FILE DIALOGS
-// Opens a native Windows file picker for .visdata files
 
 static std::string openVisdataDialog() {
     char pathBuf[MAX_PATH] = "";
@@ -86,7 +83,6 @@ static std::string openVisdataDialog() {
     return "";
 }
 
-// Opens a native Windows file picker for FASTQ files
 static std::string openFastqDialog() {
     char pathBuf[MAX_PATH] = "";
     OPENFILENAMEA ofn = {};
@@ -101,12 +97,9 @@ static std::string openFastqDialog() {
     return "";
 }
 
-// Opens a file picker then copies the selected file into destDir.
-// Returns the destination path, or "" if cancelled or copy failed.
 static std::string uploadFastqToDir(const std::string& destDir) {
     std::string src = openFastqDialog();
     if (src.empty()) return "";
-
     try {
         std::filesystem::path srcPath(src);
         std::filesystem::path dstPath =
@@ -140,11 +133,31 @@ static void renderErrorOverlay(const std::string& message) {
     ImGui::End();
 }
 
+
 // MENU BAR
+// Back button appears only when a file is loaded.
+// Clicking it returns to the launch panel.
+
 
 static void renderMenuBar(const std::string& currentFile,
-                          bool& showLaunchPanel) {
+                          bool& showLaunchPanel,
+                          bool hasSession,
+                          std::unique_ptr<ContigView>& contigView,
+                          std::unique_ptr<VisSession>&  session,
+                          std::string& loadedFilePath) {
     if (ImGui::BeginMainMenuBar()) {
+
+        // ← Back button - only shown when a session is active
+        if (hasSession) {
+            if (ImGui::Button("Back")) {
+                contigView.reset();
+                session.reset();
+                loadedFilePath.clear();
+                showLaunchPanel = true;
+            }
+            ImGui::Separator();
+        }
+
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New Assembly / Load File..."))
                 showLaunchPanel = true;
@@ -154,6 +167,7 @@ static void renderMenuBar(const std::string& currentFile,
             ImGui::EndMenu();
         }
 
+        // Current file path on the right side
         if (!currentFile.empty()) {
             float textWidth = ImGui::CalcTextSize(currentFile.c_str()).x;
             ImGui::SetCursorPosX(
@@ -165,8 +179,7 @@ static void renderMenuBar(const std::string& currentFile,
     }
 }
 
-// PROGRESS BAR LABEL
-// Returns a human-readable label for each stage.
+// PROGRESS BAR HELPERS
 
 static const char* stageLabel(AssemblyProgress::Stage stage) {
     switch (stage) {
@@ -182,8 +195,6 @@ static const char* stageLabel(AssemblyProgress::Stage stage) {
     }
 }
 
-// Maps stage to an overall pipeline fraction (0.0 – 1.0)
-// so the progress bar moves smoothly across all stages.
 static float stageBaseFraction(AssemblyProgress::Stage stage) {
     switch (stage) {
         case AssemblyProgress::Stage::Idle:              return 0.00f;
@@ -210,11 +221,9 @@ static float stageWidth(AssemblyProgress::Stage stage) {
 }
 
 // LAUNCH PANEL
-// Shown when no file is loaded or the user
-// clicks File > New Assembly / Load File.
-// Allows running a new assembly or loading
-// an existing .visdata file.
-
+// Scales to 60% of window width, 80% of height.
+// Minimum 520x400 so it stays usable on small
+// displays.
 
 static void renderLaunchPanel(
     bool&             showPanel,
@@ -225,17 +234,24 @@ static void renderLaunchPanel(
     const std::function<void(const std::string&)>& tryLoad)
 {
     ImGuiIO& io = ImGui::GetIO();
+
+    // Scale panel to window size with minimum dimensions
+    float panelW = std::max(520.0f, io.DisplaySize.x * 0.60f);
+    float panelH = std::max(400.0f, io.DisplaySize.y * 0.80f);
+
     ImGui::SetNextWindowPos(
         ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
         ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(580, 420), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(panelW, panelH), ImGuiCond_Always);
 
     ImGui::Begin("Genome Assembler",
                  nullptr,
                  ImGuiWindowFlags_NoResize   |
                  ImGuiWindowFlags_NoMove     |
-                 ImGuiWindowFlags_NoCollapse);
+                 ImGuiWindowFlags_NoCollapse |
+                 ImGuiWindowFlags_NoScrollbar);
 
+    // Section 1: Run Assembly
     ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.5f, 1.0f), "Run Assembly");
     ImGui::Separator();
     ImGui::Spacing();
@@ -247,7 +263,6 @@ static void renderLaunchPanel(
     ImGui::InputText("##fastqpath", fastqBuf, sizeof(fastqBuf));
     ImGui::SameLine();
 
-    // Browse - pick an existing file
     if (ImGui::Button("Browse...", ImVec2(100, 0))) {
         std::string picked = openFastqDialog();
         if (!picked.empty()) {
@@ -257,10 +272,8 @@ static void renderLaunchPanel(
     }
     ImGui::SameLine();
 
-    // Upload - copy a file into the Data directory
     if (ImGui::Button("Upload", ImVec2(80, 0))) {
-        // Upload into the same directory as the current working directory
-        std::string dest = uploadFastqToDir("../Data");
+        std::string dest = uploadFastqToDir("../data/genomic");
         if (!dest.empty()) {
             strncpy(fastqBuf, dest.c_str(), sizeof(fastqBuf) - 1);
             fastqBuf[sizeof(fastqBuf) - 1] = '\0';
@@ -270,7 +283,7 @@ static void renderLaunchPanel(
     ImGui::Spacing();
 
     // Output directory
-    static char outputBuf[512] = "../Data/Results";
+    static char outputBuf[512] = "../data/results";
     ImGui::Text("Output Directory:");
     ImGui::SetNextItemWidth(-8.0f);
     ImGui::InputText("##outputdir", outputBuf, sizeof(outputBuf));
@@ -283,15 +296,22 @@ static void renderLaunchPanel(
     static int kVal = 9;
     ImGui::Text("K-mer size:");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(80.0f);
+    ImGui::SetNextItemWidth(120.0f);
     ImGui::SliderInt("##kval", &kVal, 2, 63);
     ImGui::SameLine();
-    ImGui::TextDisabled("(2 – 63)");
+    ImGui::TextDisabled("(2 - 63)");
+
+    // Warn if k is large relative to typical short reads
+    if (kVal > 31) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f),
+                           "  ⚠ Large k may produce no output for short reads");
+    }
 
     ImGui::Spacing();
 
     // Strategy radio buttons
-    static int strategyIdx = 2; // 0=skip, 1=greedy, 2=scored
+    static int strategyIdx = 2;
     ImGui::Text("Resolution strategy:");
     ImGui::SameLine();
     ImGui::RadioButton("Skip",   &strategyIdx, 0); ImGui::SameLine();
@@ -311,7 +331,6 @@ static void renderLaunchPanel(
 
     if (ImGui::Button("Run Assembly", ImVec2(140, 32))) {
         if (fastqBuf[0] != '\0') {
-            // Build config from UI state
             const char* strategies[] = { "skip", "greedy", "scored" };
             config.inputPath           = std::string(fastqBuf);
             config.outputDir           = std::string(outputBuf);
@@ -319,14 +338,12 @@ static void renderLaunchPanel(
             config.strategy            = strategies[strategyIdx];
             config.estimatedTotalBases = 100000;
 
-            // Reset progress
             progress.stage    = AssemblyProgress::Stage::Idle;
             progress.progress = 0.0f;
             progress.setMessage("");
             progress.setError("");
             progress.setOutputPath("");
 
-            // Launch worker thread
             if (assemblyThread.joinable())
                 assemblyThread.join();
 
@@ -338,34 +355,28 @@ static void renderLaunchPanel(
 
     if (isRunning) ImGui::EndDisabled();
 
-    // Progress display bar
+    // Progress display
     auto stage = progress.stage.load();
 
     if (stage != AssemblyProgress::Stage::Idle) {
         ImGui::Spacing();
 
-        // Overall progress bar combining stage fraction + within-stage progress
         float overall = stageBaseFraction(stage)
                       + stageWidth(stage) * progress.progress.load();
         overall = std::min(overall, 1.0f);
 
         ImGui::SetNextItemWidth(-8.0f);
-        ImGui::ProgressBar(overall, ImVec2(-1, 20),
-                           stageLabel(stage));
+        ImGui::ProgressBar(overall, ImVec2(-1, 24), stageLabel(stage));
 
-        // Status message
         std::string msg = progress.getMessage();
-        if (!msg.empty()) {
+        if (!msg.empty())
             ImGui::TextDisabled("%s", msg.c_str());
-        }
 
-        // Error display
         if (stage == AssemblyProgress::Stage::Failed) {
             ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f),
                                "Error: %s", progress.getError().c_str());
         }
 
-        // Auto-load when complete
         if (stage == AssemblyProgress::Stage::Complete) {
             ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f),
                                "Assembly complete!");
@@ -381,9 +392,19 @@ static void renderLaunchPanel(
         }
     }
 
-    ImGui::Spacing();
-    ImGui::Spacing();
-    ImGui::TextDisabled("─────────────────────────────────────────────");
+    // Divider
+    // Push divider and load section to the bottom of the panel using
+    // available remaining height so layout doesn't depend on fixed sizes.
+    float remainingY = ImGui::GetContentRegionAvail().y;
+    float loadSectionH = ImGui::GetTextLineHeightWithSpacing() * 4.0f
+                       + ImGui::GetStyle().ItemSpacing.y * 6.0f
+                       + 32.0f; // approximate height of load section
+
+    if (remainingY > loadSectionH + 20.0f)
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY()
+                             + remainingY - loadSectionH);
+
+    ImGui::Separator();
     ImGui::Spacing();
 
     // Section 2: Load existing .visdata
@@ -412,8 +433,7 @@ static void renderLaunchPanel(
                        ImGui::Button("Load##vd", ImVec2(80, 0));
     if (loadPressed && visdataBuf[0] != '\0') {
         tryLoad(std::string(visdataBuf));
-        if (progress.stage != AssemblyProgress::Stage::Failed)
-            showPanel = false;
+        showPanel    = false;
         visdataBuf[0] = '\0';
     }
 
@@ -464,15 +484,14 @@ int main(int argc, char** argv) {
     std::unique_ptr<ContigView>   contigView;
     std::string                   loadedFilePath;
     std::string                   errorMessage;
-    float                         errorTimer    = 0.0f;
-    bool                          showPanel     = initialPath.empty();
+    float                         errorTimer  = 0.0f;
+    bool                          showPanel   = initialPath.empty();
 
     AssemblyConfig   assemblyConfig;
     AssemblyProgress assemblyProgress;
     std::thread      assemblyThread;
     bool             threadRunning = false;
 
-    // tryLoad - loads a .visdata file into session + contigView
     auto tryLoad = [&](const std::string& path) {
         if (path.empty()) return;
         try {
@@ -492,12 +511,10 @@ int main(int argc, char** argv) {
     if (!initialPath.empty())
         tryLoad(initialPath);
 
-    // Frame timing
     using Clock     = std::chrono::steady_clock;
     using TimePoint = Clock::time_point;
     TimePoint lastFrame = Clock::now();
 
-    // Frame loop
     while (!glfwWindowShouldClose(window)) {
 
         glfwPollEvents();
@@ -511,22 +528,21 @@ int main(int argc, char** argv) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // Menu bar
-        renderMenuBar(loadedFilePath, showPanel);
+        // Menu bar — passes session/contigView so back button can reset them
+        renderMenuBar(loadedFilePath, showPanel,
+                      contigView != nullptr,
+                      contigView, session, loadedFilePath);
 
-        // Launch panel
         if (showPanel) {
             renderLaunchPanel(showPanel, assemblyConfig, assemblyProgress,
                               assemblyThread, threadRunning, tryLoad);
         }
 
-        // Error overlay
         if (errorTimer > 0.0f) {
             renderErrorOverlay(errorMessage);
             errorTimer -= deltaTime;
         }
 
-        // Main view
         if (contigView) {
             contigView->update(deltaTime);
             contigView->render();
@@ -555,8 +571,6 @@ int main(int argc, char** argv) {
         glfwSwapBuffers(window);
     }
 
-    // Cleanup
-    // Join the worker thread before destroying anything it might reference
     if (assemblyThread.joinable())
         assemblyThread.join();
 
