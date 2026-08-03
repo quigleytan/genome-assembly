@@ -1,6 +1,9 @@
 # Genome Assembler
 
-A C++17 genome assembly toolkit built from scratch: 2-bit k-mer encoding, a
+Built as a deep-dive into the algorithms behind real bioinformatics tools like SPAdes and Velvet, implementing every
+component from scratch rather than wrapping existing libraries.
+
+This project consists of a C++17 genome assembly toolkit featuring: 2-bit k-mer encoding, a
 De Bruijn graph, multi-phase contig assembly, scaffold resolution, and a
 standalone OpenGL/ImGui visualizer for inspecting the assembly process.
 
@@ -8,6 +11,8 @@ No third-party bioinformatics libraries included. The encoding scheme, hash tabl
 graph, and traversal algorithms are all original implementations, validated
 against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 *E. coli* K-12).
+
+![Genome Map](media/assembly_view.png)
 
 > **Status:** Actively developed. Core pipeline is functional end-to-end;
 > gap-size estimation is in progress. See [Known Issues & Roadmap](#known-issues--roadmap).
@@ -31,11 +36,9 @@ against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 
 ## Overview
 
-This project reconstructs a DNA sequence from short, overlapping reads in FASTQ format. 
-Eulerian reconstruction was used as a proof-of-concept for the encoding, 2-bit
-k-mer hash tables, De Bruijn graphs and traversals, and FASTA file i/o. The contig and scaffolding
-assembly resembles real life bioinformatics pipelines more closely, as it is more tolerant of input data
-variability.
+This project reconstructs a DNA sequence from short, overlapping reads in FASTQ format.
+Eulerian reconstruction served as a proof-of-concept for validating the 2-bit encoding, hash tables, De Bruijn graph, 
+and FASTA I/O before tackling the more complex contig-based pipeline.
 
 Given a FASTA/FASTQ input, the pipeline:
 
@@ -95,18 +98,36 @@ Scaffolder  (skip / greedy / scored resolution strategies)
 - N50 and assembly statistics reporting at every stage
 
 **Visualizer**
-- Independent executable that reads a `.visdata` file - no dependency on
+- Independent executable that loads, reads, or generates a `.visdata` file - no dependency on
   the assembly pipeline at runtime
+- **Integrated assembly UI**: select a FASTQ file, configure k and strategy,
+    run the pipeline with live progress tracking, and load results directly
+    into the visualizer
 - **Assembly Animation** tab: scrubbable, speed-adjustable playback of the
   contig-by-contig traversal, grouped by scaffold
 - **Genome Map** tab: full assembled sequence as a wrapped, color-coded
   cell grid with click-to-inspect detail panels for each scaffold/gap
 - Built on Dear ImGui + GLFW + OpenGL 3.3, fetched via CMake `FetchContent`
   (no manual dependency setup)
+- 
+**User Interface**
 
-*(Screenshots/GIF coming once user interface for running pipelines is finalized)*
+<table>
+<tr>
+<td><img src="media/user_interface.png" width="1279"></td>
+<td><img src="media/completed_run_ui.png" width="1279"></td>
+</tr>
+</table>
 
-## Eulerian Reconstruction Test Results
+**Results View**
+<table>
+<tr>
+<td><img src="media/contig_view.png" width="1279"></td>
+<td><img src="media/genome_animation.gif" width="1279"></td>
+</tr>
+</table>
+
+## Testing Results
 
 | Genome | Approx. size | Assembly approach | Result |
 |---|---|---|---|
@@ -126,18 +147,18 @@ exactly why the contig/scaffold pipeline exists.
 
 ```
 include/assembler/
-├── core/            # DNASequence, DeBruijnGraph, KmerTable, hash table, shared types
 ├── construction/     # K-mer encoding, contig assembly, scaffolding, gap handling
+├── core/             # dna_sequence, de_bruijn_graph, kmer_table, recorder, hash table, shared types
 ├── exceptions/       # Custom exception types
-├── io/               # FASTA/FASTQ readers
-└── graphics/         # Visualizer: contig_view, vis_loader/exporter
+├── io/               # FASTA/FASTQ reader
+└── graphics/         # Visualizer: assembly_runner, contig_view, vis_loader/exporter
 
-src/                  # Mirrors include/ layout
-tests/                # InitializationTests, ProcessingTests, ConstructionTests
+media/                # Images included in README
+src/                  # Mirrors include/ layout, also includes configuration pipelines
+tests/                # initalization_tests, processing-tests, construction-tests
 data/
 ├── genomic/          # Input FASTA/FASTQ test genomes
-├── output/           # Assembled FASTA + scaffold output
-└── graphical/        # .visdata files consumed by the Visualizer
+├── results/          # Output from UI pipeline
 ```
 
 ## Getting Started
@@ -150,7 +171,7 @@ data/
   and Dear ImGui automatically)
 
 ```bash
-git clone https://github.com/<your-username>/<repo-name>.git
+https://github.com/quigleytan/quigleytan_genome_assembler.git
 cd <repo-name>
 cmake -B build -G "MinGW Makefiles"   # or your preferred generator
 cmake --build build
@@ -190,15 +211,13 @@ graph/contig/scaffold statistics to stdout as it runs.
 
 ## Known Issues & Roadmap
 
-Being upfront about the current state rather than hiding it:
-
 **Open bugs (tracked, not yet fixed)**
-- Test files (`InitializationTests.cpp`, `ProcessingTests.cpp`,
-  `ConstructionTests.cpp`) reference stale include paths and outdated
-  class names from before a project restructure - **highest priority fix**
+- Test files (`initialization_tests.cpp`, `processing_tests.cpp`,
+  `construction_tests.cpp`) were used to validate early stage results. These files now 
+  reference stale include paths and outdated class names from before a project restructure
 - `NodeNotFoundException` takes `uint64_t` instead of `__uint128_t`,
-  silently truncating node IDs for k > 33
-- `ContigAssembler` doesn't yet initiate walks from sink nodes in every
+  silently truncating node IDs for k > 33 due to a change to primarily using `__uint128_t`
+- `contig_assembler` doesn't yet initiate walks from sink nodes in every
   case, which is the main source of incomplete traversal on complex graphs
 
 **In progress**
@@ -208,12 +227,11 @@ Being upfront about the current state rather than hiding it:
 - Gap filling using the estimated size (`gap_filling.h`/`.cpp`)
 
 **Planned**
-- User interface for running pipelines (currently only the executables are available)
 - K-mer frequency filtering (suppress low-count/error k-mers before
   graph construction)
 - Gene finding - starting with ORF (open reading frame) detection as
   an approachable entry point, with HMM-based gene prediction as a
-  longer-term stretch goal
+  longer-term goal to incorporate ML principles.
 
 
 ## Development Notes
