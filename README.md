@@ -148,6 +148,13 @@ somewhere between ~48 kb and ~230 kb for the genomes tested - past that,
 repeats longer than k-1 make a single unambiguous path impossible, which is
 exactly why the contig/scaffold pipeline exists.
 
+## Benchmark Results
+
+- Processes 35M base pairs (350K reads) at ~2.05M bp/s after optimization.
+- From the original implementation, reduced peak memory from 18.8GB to 5.9GB and assembly fragmentation from 16.2M to 1.1M
+contigs on a 35M-base benchmark by redesigning the de Bruijn graph's edge representation to eliminate duplicate storage
+that scaled with read coverage instead of graph size.
+
 ## Project Structure
 
 ```

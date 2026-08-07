@@ -3,7 +3,7 @@
  * Summary:
  * - Benchmarks the genome assembler across multiple k values.
  * - Measures wall time and peak RAM per pipeline stage.
- * - Runs each configuration 3 times and reports mean ± stddev.
+ * - Runs each configuration 3 times and reports mean +/- stddev.
  * - Only tests the contig + scaffold pipeline (not Eulerian).
  * - Outputs a formatted table to stdout suitable for screenshots.
  *
@@ -19,6 +19,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <streambuf>
 #include <string>
 #include <vector>
 #include <numeric>
@@ -37,16 +38,50 @@
 #include "assembler/construction/contig_assembler.h"
 #include "assembler/construction/scaffolder.h"
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // CONSTANTS
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 static constexpr int    NUM_RUNS         = 3;
 static constexpr char   DEFAULT_INPUT[]  = "../data/genomic/synthetic_3mb.fastq";
+static constexpr char   DEFAULT_OUTPUT[] = "../data/results/benchmark_results.txt";
 static const std::vector<size_t> K_VALUES = { 15, 20, 25, 30, 35, 51 };
-// ─────────────────────────────────────────────
+
+// ------------------------------------------------
+// TEE OUTPUT
+// A streambuf that duplicates every character written to it into two
+// underlying streambufs. Used to mirror everything sent to std::cout
+// into a results file as well, without changing any of the existing
+// std::cout << ... call sites throughout this file.
+// ------------------------------------------------
+
+class TeeStreambuf : public std::streambuf {
+public:
+    TeeStreambuf(std::streambuf* first, std::streambuf* second)
+        : first_(first), second_(second) {}
+
+protected:
+    int overflow(int c) override {
+        if (c == EOF) return !EOF;
+        int r1 = first_->sputc(static_cast<char>(c));
+        int r2 = second_->sputc(static_cast<char>(c));
+        return (r1 == EOF || r2 == EOF) ? EOF : c;
+    }
+
+    int sync() override {
+        int r1 = first_->pubsync();
+        int r2 = second_->pubsync();
+        return (r1 == 0 && r2 == 0) ? 0 : -1;
+    }
+
+private:
+    std::streambuf* first_;
+    std::streambuf* second_;
+};
+
+// ------------------------------------------------
 // TIMING HELPER
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 using Clock     = std::chrono::high_resolution_clock;
 using TimePoint = Clock::time_point;
@@ -55,9 +90,9 @@ static double ms(TimePoint a, TimePoint b) {
     return std::chrono::duration<double, std::milli>(b - a).count();
 }
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // MEMORY HELPERS
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 static size_t getWorkingSetMB() {
     PROCESS_MEMORY_COUNTERS pmi = {};
@@ -72,9 +107,9 @@ static size_t getPeakWorkingSetMB() {
 }
 
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // STATS HELPERS
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 static double mean(const std::vector<double>& v) {
     return std::accumulate(v.begin(), v.end(), 0.0) / v.size();
@@ -88,14 +123,14 @@ static double stddev(const std::vector<double>& v) {
     return std::sqrt(sum / v.size());
 }
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // FILE PRE-SCAN
 // Counts total bases in a FASTQ file so KmerTable
-// can be sized accurately — avoids both over-
+// can be sized accurately - avoids both over-
 // allocation (inflates RAM numbers) and under-
 // allocation (causes extra rehash cycles that
 // inflate timing numbers).
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 static size_t countTotalBases(const std::string& path) {
     std::ifstream f(path);
@@ -121,9 +156,9 @@ static size_t countReads(const std::string& path) {
     return lines / 4;
 }
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // BENCHMARK RESULT STRUCTS
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 struct StageResult {
     double parseMs    = 0.0;
@@ -154,9 +189,9 @@ struct KResult {
     size_t n50           = 0;
 };
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // N50 CALCULATION
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 static size_t computeN50(const std::vector<ContigAssembler::Contig>& contigs) {
     if (contigs.empty()) return 0;
@@ -179,11 +214,11 @@ static size_t computeN50(const std::vector<ContigAssembler::Contig>& contigs) {
     return 0;
 }
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // SINGLE BENCHMARK RUN
 // Runs the full contig + scaffold pipeline for
 // one k value and returns per-stage timings.
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 static StageResult runOnce(const std::string& path,
                             size_t k,
@@ -242,9 +277,9 @@ static StageResult runOnce(const std::string& path,
     return result;
 }
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // TABLE FORMATTING
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 static void printSeparator(int width = 110) {
     std::cout << std::string(width, '-') << "\n";
@@ -272,7 +307,7 @@ static void printHeader() {
 static std::string fmtMeanStd(const std::vector<double>& v) {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(1)
-        << mean(v) << " ±" << stddev(v);
+        << mean(v) << " +/-" << stddev(v);
     return oss.str();
 }
 
@@ -294,17 +329,33 @@ static void printRow(const KResult& r) {
         << "\n";
 }
 
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 // MAIN
-// ─────────────────────────────────────────────
+// ------------------------------------------------
 
 int main(int argc, char** argv) {
-    const std::string inputPath = (argc >= 2) ? argv[1] : DEFAULT_INPUT;
+    const std::string inputPath  = (argc >= 2) ? argv[1] : DEFAULT_INPUT;
+    const std::string outputPath = (argc >= 3) ? argv[2] : DEFAULT_OUTPUT;
+
+    // Mirror everything written to std::cout into outputPath as well, for
+    // the rest of main()'s lifetime. Every std::cout << below this point
+    // (including inside runOnce()) gets duplicated automatically.
+    std::ofstream resultsFile(outputPath);
+    if (!resultsFile.is_open()) {
+        std::cerr << "Warning: could not open " << outputPath
+                  << " for writing; continuing with console output only.\n";
+    }
+
+    std::streambuf* originalCoutBuf = std::cout.rdbuf();
+    TeeStreambuf teeBuf(originalCoutBuf, resultsFile.rdbuf());
+    if (resultsFile.is_open()) {
+        std::cout.rdbuf(&teeBuf);
+    }
 
     std::cout << "\n";
-    std::cout << "╔══════════════════════════════════════════════════╗\n";
-    std::cout << "║         Genome Assembler Benchmark               ║\n";
-    std::cout << "╚══════════════════════════════════════════════════╝\n\n";
+    std::cout << "======================================================\n";
+    std::cout << "         Genome Assembler Benchmark\n";
+    std::cout << "======================================================\n\n";
 
     std::cout << "Input file:  " << inputPath  << "\n";
     std::cout << "Runs per k:  " << NUM_RUNS   << "\n";
@@ -377,7 +428,7 @@ int main(int argc, char** argv) {
 
     // Print results table
     std::cout << "\n";
-    std::cout << "Results  (mean ± stddev across " << NUM_RUNS << " runs)\n";
+    std::cout << "Results  (mean +/- stddev across " << NUM_RUNS << " runs)\n";
     printHeader();
 
     for (const auto& r : results)
@@ -411,5 +462,13 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "\n";
+
+    // Stop mirroring to the file and flush/close it before returning.
+    std::cout.rdbuf(originalCoutBuf);
+    if (resultsFile.is_open()) {
+        resultsFile.close();
+        std::cout << "Results written to " << outputPath << "\n";
+    }
+
     return 0;
 }
