@@ -8,7 +8,7 @@
 // PRIVATE HELPER FUNCTIONS
 
 void ContigAssembler::initializeAdjacency() {
-    adjCopy_ = HashTable<NodeId, std::vector<NodeId>>(
+    adjCopy_ = HashTable<NodeId, std::vector<DeBruijnGraph::Edge>>(
         graph_.getNodeCount() * 2);
 
     // Pass 1: Insert all nodes
@@ -16,18 +16,25 @@ void ContigAssembler::initializeAdjacency() {
         adjCopy_.insert(node);
     }
 
-    // Pass 2: Assign and sort neighbor lists
+    // Pass 2: Assign and sort neighbor lists (at most 4 entries per node,
+    // so this copy/sort is now O(nodeCount) instead of O(total occurrences)).
     for (NodeId node : graph_.getAllNodes()) {
         const auto* data = graph_.findNode(node);
         auto* neighborRef = adjCopy_.find(node);
         *neighborRef = data->getNeighbors();
-        std::sort(neighborRef->begin(), neighborRef->end());
+        std::sort(neighborRef->begin(), neighborRef->end(),
+                  [](const DeBruijnGraph::Edge& a, const DeBruijnGraph::Edge& b) {
+                      return a.to < b.to;
+                  });
     }
 }
 
 bool ContigAssembler::isAmbiguous(NodeId node) const {
     const auto* data = graph_.findNode(node);
-    return data->getInDegree() > 1 || data->getOutDegree() > 1;
+    // Topology-aware: a node covered many times by one non-branching path
+    // is still non-branching. Multiplicity is handled separately via each
+    // edge's weight during traversal (see walkContig).
+    return data->getUniqueInDegree() > 1 || data->getUniqueOutDegree() > 1;
 }
 
 ContigAssembler::Contig ContigAssembler::walkContig(NodeId startNode, size_t contigIndex) {
@@ -58,8 +65,11 @@ ContigAssembler::Contig ContigAssembler::walkContig(NodeId startNode, size_t con
             break;
         }
 
-        NodeId next = neighbors->back();
-        neighbors->pop_back();
+        // Consume one unit of weight from the last edge; only remove the
+        // entry once its full multiplicity has been walked.
+        DeBruijnGraph::Edge& edge = neighbors->back();
+        NodeId next = edge.to;
+        if (--edge.weight == 0) neighbors->pop_back();
 
         char appendedBase = KmerEncoding::decode(next, nodeLen).back();
         result.sequence += appendedBase;
@@ -71,7 +81,7 @@ ContigAssembler::Contig ContigAssembler::walkContig(NodeId startNode, size_t con
         if (next == startNode) {
             result.endNode    = startNode;
             result.isCircular = true;
-            size_t overlap = nodeLen - 1; // k-2 chars to trim
+            size_t overlap = nodeLen; // k-1 chars to trim
             if (result.sequence.length() > overlap)
                 result.sequence.resize(result.sequence.length() - overlap);
 
@@ -84,7 +94,7 @@ ContigAssembler::Contig ContigAssembler::walkContig(NodeId startNode, size_t con
         }
 
         const auto* nextData = graph_.findNode(next);
-        if (nextData->getInDegree() != 1 || nextData->getOutDegree() != 1) {
+        if (nextData->getUniqueInDegree() != 1 || nextData->getUniqueOutDegree() != 1) {
             result.endNode = next;
 
             // Record the walk ended at a branch point.
@@ -132,8 +142,8 @@ void ContigAssembler::computeContigs() {
     for (NodeId node : graph_.getAllNodes()) {
         const auto* data = graph_.findNode(node);
 
-        bool isBranchPoint = data->getInDegree() > 1 || data->getOutDegree() > 1;
-        bool isSource      = data->getInDegree() == 0 && data->getOutDegree() >= 1;
+        bool isBranchPoint = data->getUniqueInDegree() > 1 || data->getUniqueOutDegree() > 1;
+        bool isSource      = data->getUniqueInDegree() == 0 && data->getUniqueOutDegree() >= 1;
 
         if (!isBranchPoint && !isSource) continue;
 

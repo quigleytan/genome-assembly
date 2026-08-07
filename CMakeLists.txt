@@ -22,7 +22,7 @@ fetch_dependency(glfw https://github.com/glfw/glfw/archive/refs/tags/3.3.9.tar.g
 fetch_dependency(glm https://github.com/g-truc/glm/archive/refs/tags/1.0.1.tar.gz)
 fetch_dependency(imgui https://github.com/ocornut/imgui/archive/refs/tags/v1.90.4.tar.gz)
 
-# IMGUI
+#IMGUI
 add_library(ImGui STATIC
         ${imgui_SOURCE_DIR}/imgui.cpp
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -32,12 +32,9 @@ add_library(ImGui STATIC
         ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
-target_include_directories(ImGui PUBLIC
-        ${imgui_SOURCE_DIR}
-        ${imgui_SOURCE_DIR}/backends
-        ${glfw_SOURCE_DIR}/include
-)
+target_include_directories(ImGui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends ${glfw_SOURCE_DIR}/include)
 target_link_libraries(ImGui PUBLIC glfw)
+
 if(WIN32)
     target_link_libraries(ImGui PUBLIC opengl32)
 endif()
@@ -57,77 +54,28 @@ set(CORE_SOURCES
 set(CONSTRUCTION_SOURCES
         src/construction/kmer_encoding.cpp
         src/construction/contig_assembler.cpp
+        src/construction/eulerian_assembler.cpp
         src/construction/scaffolder.cpp
         src/construction/gap_estimation.cpp
         src/construction/gap_filling.cpp
 )
 
-# ASSEMBLY EXECUTABLES
+# Executables
+add_assembler_app(ScaffoldAssembly      src/pipelines/scaffold_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/vis_exporter.cpp)
+add_assembler_app(FastaEulerianAssembly src/pipelines/fasta_eulerian_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
+add_assembler_app(FastaContigAssembly   src/pipelines/fasta_contig_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
+add_assembler_app(FastqContigAssembly   src/pipelines/fastq_contig_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 
-add_assembler_app(scaffold_assembly
-        src/pipelines/scaffold_assembly.cpp
-        ${CORE_SOURCES}
-        ${CONSTRUCTION_SOURCES}
-        src/graphics/vis_exporter.cpp
-)
+# Tests
+add_assembler_app(InitializationTests tests/initialization_tests.cpp src/core/dna_sequence.cpp src/io/sequence_reader.cpp src/construction/kmer_encoding.cpp)
+add_assembler_app(ProcessingTests tests/processing_tests.cpp src/construction/kmer_encoding.cpp src/core/dna_sequence.cpp)
+add_assembler_app(ConstructionTests tests/construction_tests.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 
-add_assembler_app(fasta_eulerian_assembly
-        src/pipelines/fasta_eulerian_assembly.cpp
-        ${CORE_SOURCES}
-        ${CONSTRUCTION_SOURCES}
-)
-
-add_assembler_app(fasta_contig_assembly
-        src/pipelines/fasta_contig_assembly.cpp
-        ${CORE_SOURCES}
-        ${CONSTRUCTION_SOURCES}
-)
-
-add_assembler_app(fastq_contig_assembly
-        src/pipelines/fastq_contig_assembly.cpp
-        ${CORE_SOURCES}
-        ${CONSTRUCTION_SOURCES}
-)
-
-# BENCHMARK EXECUTABLES
-
-add_assembler_app(generate_fastq
-        src/pipelines/generate_fastq.cpp
-)
-
-add_assembler_app(benchmark_assembly
-        src/pipelines/benchmark_assembly.cpp
-        ${CORE_SOURCES}
-        ${CONSTRUCTION_SOURCES}
-)
-if(WIN32)
-    target_link_libraries(benchmark_assembly PRIVATE psapi)
-endif()
-
-# TEST EXECUTABLES
-
-add_assembler_app(initialization_tests
-        tests/initialization_tests.cpp
-        src/core/dna_sequence.cpp
-        src/io/sequence_reader.cpp
-        src/construction/kmer_encoding.cpp
-)
-
-add_assembler_app(processing_tests
-        tests/processing_tests.cpp
-        src/construction/kmer_encoding.cpp
-        src/core/dna_sequence.cpp
-)
-
-add_assembler_app(construction_tests
-        tests/construction_tests.cpp
-        ${CORE_SOURCES}
-        ${CONSTRUCTION_SOURCES}
-)
-
-# VISUALIZER EXECUTABLE
-
-add_assembler_app(visualizer
+# Benchmark Tests
+add_assembler_app(benchmark_assembly src/pipelines/benchmark_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/vis_exporter.cpp)
+add_assembler_app(generate_fastq src/pipelines/generate_fastq.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
+# Visualizer
+add_assembler_app(Visualizer
         src/graphics/gui.cpp
         src/graphics/assembly_runner.cpp
         src/graphics/contig_view.cpp
@@ -137,15 +85,5 @@ add_assembler_app(visualizer
         ${CONSTRUCTION_SOURCES}
 )
 
-target_include_directories(visualizer PRIVATE
-        ${imgui_SOURCE_DIR}
-        ${imgui_SOURCE_DIR}/backends
-        ${glfw_SOURCE_DIR}/include
-        ${glm_SOURCE_DIR}
-)
-
-target_link_libraries(visualizer PRIVATE ImGui glfw)
-
-if(WIN32)
-    target_link_libraries(visualizer PRIVATE opengl32 stdc++fs)
-endif()
+target_include_directories(Visualizer PRIVATE ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends ${glfw_SOURCE_DIR}/include ${glm_SOURCE_DIR})
+target_link_libraries(Visualizer PRIVATE ImGui glfw)

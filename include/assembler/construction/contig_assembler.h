@@ -39,7 +39,7 @@ public:
 private:
 
     DeBruijnGraph& graph_;                                     // Graph to be traversed.
-    HashTable<NodeId, std::vector<NodeId>> adjCopy_; // Table of all nodes and neighbor lists.
+    HashTable<NodeId, std::vector<DeBruijnGraph::Edge>> adjCopy_; // Table of all nodes and their (<=4-entry) weighted neighbor lists.
     std::vector<Contig> contigs_;                              // List of all contigs derived from graph_.
     Recorder* recorder_;                                       // Optional - null in normal pipeline runs.
 

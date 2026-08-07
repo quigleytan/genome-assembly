@@ -49,8 +49,9 @@ void DeBruijnGraph::addKmer(NodeId inputKmer) {
     NodeData* from = table_.find(prefix);
     NodeData* to   = table_.find(suffix);
 
-    from->addNeighbor(suffix);
+    bool newEdge = from->addNeighbor(suffix);
     to->incrementInDegree();
+    if (newEdge) to->incrementUniqueInDegree();
     edgeCount_++;
 }
 
@@ -77,8 +78,9 @@ void DeBruijnGraph::printGraph() const {
                   << " | out: " << findNode(node)->getOutDegree()
                   << " | -> ";
         auto neighbors = findNode(node)->getNeighbors();
-        for (NodeId neighbor : neighbors) {
-            std::cout << KmerEncoding::decode(neighbor, k_ - 1) << " ";
+        for (const auto& edge : neighbors) {
+            std::cout << KmerEncoding::decode(edge.to, k_ - 1)
+                      << "(x" << edge.weight << ") ";
         }
         std::cout << "\n";
     }

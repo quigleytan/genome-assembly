@@ -26,7 +26,7 @@ class EulerianAssembler {
 private:
 
     DeBruijnGraph& graph_;                                     // Graph to be traversed.
-    HashTable<NodeId, std::vector<NodeId>> adjCopy_; // Table of all nodes and neighbor lists.
+    HashTable<NodeId, std::vector<DeBruijnGraph::Edge>> adjCopy_; // Table of all nodes and their (<=4-entry) weighted neighbor lists.
     std::vector<NodeId> path_;                                 // List of nodes visited.
 
     /**

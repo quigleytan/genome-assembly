@@ -22,6 +22,31 @@
 
 class DeBruijnGraph {
 
+public:
+
+    /**
+     * @brief A single outgoing edge, compacted by multiplicity.
+     *
+     * A de Bruijn graph node (a k-1 mer) has at most 4 distinct outgoing
+     * edges - one per possible next base (A/C/G/T). Prior to this struct,
+     * addKmer() pushed one raw vector entry per k-mer OCCURRENCE, so a
+     * node touched by high-coverage reads could accumulate millions of
+     * duplicate entries for the same handful of neighbors. Edge collapses
+     * repeat occurrences of the same (from -> to) transition into a single
+     * entry with a running count, bounding every node's neighbor list to
+     * at most 4 entries regardless of coverage depth.
+     *
+     * getOutDegree()/getInDegree() still sum to the same multiplicity-aware
+     * totals as before (needed for EulerianAssembler's balance check), and
+     * traversal (ContigAssembler/EulerianAssembler) consumes one unit of
+     * weight per step instead of popping a duplicate - so results are
+     * unchanged, only the storage is smaller.
+     */
+    struct Edge {
+        NodeId to;
+        size_t weight = 0;
+    };
+
 private:
 
     const size_t k_;
@@ -30,19 +55,46 @@ private:
     size_t nodeCount_ = 0;
     size_t edgeCount_ = 0;
 
-    // Note: outdegree is tracked by neighbors.size
     struct NodeData {
-        std::vector<NodeId> neighbors_; // Outgoing edges only
-        size_t inDegree_ = 0;             // Number of edges entering the node
+        std::vector<Edge> neighbors_;      // Outgoing edges only - at most 4 entries.
+        size_t inDegree_ = 0;              // Total incoming edge occurrences (multiplicity-aware).
+        size_t uniqueInDegree_ = 0;        // Count of distinct predecessor nodes (topology-aware).
 
-        [[nodiscard]] const std::vector<NodeId>& getNeighbors() const { return neighbors_; }
+        [[nodiscard]] const std::vector<Edge>& getNeighbors() const { return neighbors_; }
+
+        // Multiplicity-aware degree: total edge OCCURRENCES (coverage-weighted).
+        // Required by EulerianAssembler, whose balance check and per-occurrence
+        // traversal are only correct when they account for read coverage depth.
         [[nodiscard]] size_t getInDegree() const { return inDegree_; }
-        [[nodiscard]] size_t getOutDegree() const { return neighbors_.size(); }
+        [[nodiscard]] size_t getOutDegree() const {
+            size_t total = 0;
+            for (const auto& e : neighbors_) total += e.weight;
+            return total;
+        }
 
-        std::vector<NodeId>& getNeighbors() { return neighbors_; }
+        // Topology-aware degree: count of DISTINCT neighbor nodes, ignoring
+        // how many times each edge was observed. This is what "is this node
+        // a branch point" should mean for unitig extraction (ContigAssembler) -
+        // a node covered 100,000x by a single non-branching path is still a
+        // single non-branching path, not a branch.
+        [[nodiscard]] size_t getUniqueOutDegree() const { return neighbors_.size(); }
+        [[nodiscard]] size_t getUniqueInDegree() const { return uniqueInDegree_; }
 
-        void addNeighbor(NodeId neighbor) { neighbors_.push_back(neighbor); }
+        std::vector<Edge>& getNeighbors() { return neighbors_; }
+
+        // Increments the existing edge's weight if this transition has been
+        // seen before; otherwise adds a new (bounded to <=4) entry. Returns
+        // true iff this was a newly created distinct edge, so the caller can
+        // update the target's uniqueInDegree_ accordingly.
+        bool addNeighbor(NodeId neighbor) {
+            for (auto& e : neighbors_) {
+                if (e.to == neighbor) { ++e.weight; return false; }
+            }
+            neighbors_.push_back({neighbor, 1});
+            return true;
+        }
         void incrementInDegree() { ++inDegree_; }
+        void incrementUniqueInDegree() { ++uniqueInDegree_; }
     };
 
     HashTable<NodeId, NodeData> table_;

@@ -17,7 +17,10 @@ void EulerianAssembler::initializeAdjacency() {
         const auto* data = graph_.findNode(node);
         auto* neighborRef = adjCopy_.find(node);  // find() returns pointer, stable after inserts done
         *neighborRef = data->getNeighbors();
-        std::sort(neighborRef->begin(), neighborRef->end());
+        std::sort(neighborRef->begin(), neighborRef->end(),
+                  [](const DeBruijnGraph::Edge& a, const DeBruijnGraph::Edge& b) {
+                      return a.to < b.to;
+                  });
     }
 }
 
@@ -73,8 +76,13 @@ void EulerianAssembler::computePath() {
 
         // Checks if the current node has neighbors, then takes an edge and moves to the next node.
         if (!neighbors->empty()) {
-            NodeId next = neighbors->back();
-            neighbors->pop_back();   // Deletes the edge immediately.
+            // Consume one unit of weight from the last edge; only remove
+            // the entry once its full multiplicity has been walked. This
+            // still visits every physical edge occurrence exactly once,
+            // satisfying Hierholzer's algorithm.
+            DeBruijnGraph::Edge& edge = neighbors->back();
+            NodeId next = edge.to;
+            if (--edge.weight == 0) neighbors->pop_back();
             stack.push(next);
         } else { // If no edges remain, adds the node to the path and backtrack.
             path_.push_back(currentID);
