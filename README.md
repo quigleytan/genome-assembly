@@ -254,7 +254,7 @@ design:
 
 ## License
 
-_Not yet licensed_
+MIT: see [LICENSE](LICENSE) for details.
 
 ---
 
