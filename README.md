@@ -150,7 +150,7 @@ exactly why the contig/scaffold pipeline exists.
 
 ## Benchmark Results
 
-- Processes 35M base pairs (350K reads) at ~2.05M bp/s after optimization.
+- Processed 35M base pairs across 350K reads at ~2.05M bp/s on the benchmark.
 - From the original implementation, reduced peak memory from 18.8GB to 5.9GB and assembly fragmentation from 16.2M to 1.1M
 contigs on a 35M-base benchmark by redesigning the de Bruijn graph's edge representation to eliminate duplicate storage
 that scaled with read coverage instead of graph size.
