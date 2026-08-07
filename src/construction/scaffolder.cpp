@@ -8,7 +8,6 @@
 
 #include "assembler/construction/kmer_encoding.h"
 
-
 // PRIVATE HELPER FUNCTIONS
 
 static double mean(const std::vector<double>& data) {
