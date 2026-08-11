@@ -70,6 +70,7 @@ add_assembler_app(FastqContigAssembly   src/pipelines/fastq_contig_assembly.cpp 
 add_assembler_app(InitializationTests tests/initialization_tests.cpp src/core/dna_sequence.cpp src/io/sequence_reader.cpp src/construction/kmer_encoding.cpp)
 add_assembler_app(ProcessingTests tests/processing_tests.cpp src/construction/kmer_encoding.cpp src/core/dna_sequence.cpp)
 add_assembler_app(ConstructionTests tests/construction_tests.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
+add_assembler_app(ScaffolderTests tests/scaffolder_tests.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 
 # Benchmark Tests
 add_assembler_app(benchmark_assembly src/pipelines/benchmark_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/vis_exporter.cpp)

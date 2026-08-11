@@ -55,17 +55,22 @@ static DeBruijnGraph buildGraph(const std::string& sequence, int k) {
 
 int main() {
 
-    if (DebruijnGraphTests()) {
-        std::cout << "De Bruijn Graph Tests Passed" << std::endl;
-    }
+    bool passed = true;
+    bool result;
 
-    if (EulerianPathTests()) {
-        std::cout << "Eulerian Path Tests Passed" << std::endl;
-    }
+    result = DebruijnGraphTests();
+    passed &= result;
+    if (result) std::cout << "De Bruijn Graph Tests Passed" << std::endl;
 
-    if (ContigTraversalTests()) {
-        std::cout << "Contig Traversal Tests Passed" << std::endl;
-    }
+    result = EulerianPathTests();
+    passed &= result;
+    if (result) std::cout << "Eulerian Path Tests Passed" << std::endl;
+
+    result = ContigTraversalTests();
+    passed &= result;
+    if (result) std::cout << "Contig Traversal Tests Passed" << std::endl;
+
+    return passed ? 0 : 1;
 }
 
 bool DebruijnGraphTests() {
