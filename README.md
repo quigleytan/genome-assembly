@@ -155,6 +155,20 @@ exactly why the contig/scaffold pipeline exists.
 contigs on a 35M-base benchmark by redesigning the de Bruijn graph's edge representation to eliminate duplicate storage
 that scaled with read coverage instead of graph size.
 
+Results (mean ± stddev across 3 runs):
+
+| K  | Parse (ms) | Encode (ms)     | Graph (ms)      | Contigs (ms)     | Scaffold (ms)    | Total (ms)        | RAM (MB) | Contigs | Scaffolds | N50 (bp) |
+|----|------------|-----------------|-----------------|------------------|------------------|-------------------|----------|---------|-----------|----------|
+| 15 | 0.5 ± 0.1  | 6698.3 ± 1141.1 | 3905.4 ± 1100.5 | 14889.4 ± 4578.8 | 26075.6 ± 2177.3 | 51569.3 ± 8860.3  | 5943.33  | 1737893 | 419294    | 39       |
+| 20 | 0.8 ± 0.3  | 5563.4 ± 1691.1 | 2891.9 ± 1069.1 | 15965.4 ± 7649.5 | 10142.0 ± 4147.2 | 34563.5 ± 14289.4 | 5945     | 1241546 | 408544    | 47       |
+| 25 | 0.3 ± 0.0  | 3294.5 ± 135.9  | 1851.1 ± 56.0   | 9891.6 ± 392.9   | 6601.6 ± 223.4   | 21639.0 ± 740.9   | 5945     | 1228916 | 407279    | 43       |
+| 30 | 0.4 ± 0.1  | 3222.9 ± 100.9  | 1827.5 ± 72.4   | 9599.0 ± 205.7   | 6165.0 ± 149.7   | 20814.9 ± 468.0   | 5945     | 1211748 | 403904    | 43       |
+| 35 | 0.3 ± 0.1  | 3100.7 ± 20.3   | 1857.5 ± 42.1   | 9713.6 ± 23.7    | 5948.8 ± 27.8    | 20620.9 ± 67.3    | 5945     | 1193188 | 401796    | 45       |
+| 51 | 0.3 ± 0.1  | 2496.3 ± 50.7   | 1662.0 ± 46.6   | 8329.4 ± 165.4   | 4549.0 ± 86.8    | 17037.0 ± 337.3   | 5945     | 1100524 | 389219    | 56       |
+
+Fastest configuration: k=51, total=17037.0 ms, N50=56 bp, RAM=5945.0 MB
+Best assembly quality: k=51, N50=56 bp, contigs=1100524
+
 ## Project Structure
 
 ```
@@ -221,8 +235,6 @@ offers to run again with different settings before exiting.
 ## Known Issues & Roadmap
 
 **Open bugs (tracked, not yet fixed)**
-- `NodeNotFoundException` takes `uint64_t` instead of `__uint128_t`,
-  silently truncating node IDs for k > 33 due to a change to primarily using `__uint128_t`
 - `contig_assembler` doesn't yet initiate walks from sink nodes in every
   case, which is the main source of incomplete traversal on complex graphs
 

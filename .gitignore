@@ -1,2 +1,7 @@
 cmake-build-debug/
+cmake-build-release/
 .idea/
+
+# Generated data files — run GenerateFastq to reproduce
+data/genomic/synthetic_3mb.fastq
+data/results/

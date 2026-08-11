@@ -74,6 +74,11 @@ add_assembler_app(scaffolder_tests tests/scaffolder_tests.cpp ${CORE_SOURCES} ${
 
 # Benchmark Tests
 add_assembler_app(benchmark_assembly src/pipelines/benchmark_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/vis_exporter.cpp)
+
+if(WIN32)
+    target_link_libraries(benchmark_assembly PRIVATE psapi)
+endif()
+
 add_assembler_app(generate_fastq src/pipelines/generate_fastq.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 # Visualizer
 add_assembler_app(user_interface

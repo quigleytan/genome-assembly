@@ -1,12 +1,7 @@
-/*
- * DNASequenceException.h
- * Created by Tanner Quigley on 2/15/2026
- * Summary:
- *  - Custom exception used to flag composition problems of input sequences.
- */
 #ifndef NODE_NOT_FOUND_EXCEPTION_H
 #define NODE_NOT_FOUND_EXCEPTION_H
 
+#include <algorithm>
 #include <exception>
 #include <string>
 #include <cstdint>
@@ -14,17 +9,24 @@
 class NodeNotFoundException : public std::exception {
 
 private:
-
     std::string message;
+
+    static std::string uint128ToString(__uint128_t v) {
+        if (v == 0) return "0";
+        std::string s;
+        while (v > 0) { s += ('0' + static_cast<int>(v % 10)); v /= 10; }
+        std::reverse(s.begin(), s.end());
+        return s;
+    }
 
 public:
 
-    explicit NodeNotFoundException(uint64_t node)
-        : message("Node not found: " + std::to_string(node)) {}
+    explicit NodeNotFoundException(__uint128_t node)
+        : message("Node not found: " + uint128ToString(node)) {}
 
-    // Overwriting of what() base method
     [[nodiscard]] const char* what() const noexcept override {
         return message.c_str();
     }
 };
+
 #endif //NODE_NOT_FOUND_EXCEPTION_H
