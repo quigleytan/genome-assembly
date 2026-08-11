@@ -1,20 +1,40 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-#include "assembler/core/data_list.h"
 #include "assembler/core/kmer_table.h"
 #include "assembler/core/de_bruijn_graph.h"
 
 #include "assembler/construction/contig_assembler.h"
 
 #include "assembler/io/sequence_reader.h"
-
-// CONFIGURATION
-
-static constexpr size_t ESTIMATED_TOTAL_BASES = 100000;
+#include "assembler/io/console_input.h"
 
 // PIPELINE STAGES
+
+/**
+ * @brief Pre-scans a FASTQ file to sum every read's sequence length, so the
+ *        KmerTable can be sized correctly without asking the user to guess
+ *        an estimate (the table does not support rehashing mid-run).
+ *
+ * @param path Path to the FASTQ file.
+ * @return Total base count across all reads.
+ */
+static size_t countFastqBases(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open())
+        throw std::runtime_error("Could not open file: " + path);
+
+    size_t totalBases = 0;
+    std::string line;
+    size_t lineIndex = 0;
+    while (std::getline(file, line)) {
+        if (lineIndex % 4 == 1) totalBases += line.length();
+        ++lineIndex;
+    }
+    return totalBases;
+}
 
 /**
  * @brief Stage 1 - Load FASTQ reads into a KmerTable.
@@ -22,16 +42,17 @@ static constexpr size_t ESTIMATED_TOTAL_BASES = 100000;
  * The returned kmer_table must stay instantiated through buildGraph(),
  * since the file stream is fully consumed here and cannot be re-read.
  *
- * @param path Path to the FASTQ file.
- * @param k    K-mer size for encoding.
+ * @param path       Path to the FASTQ file.
+ * @param k          K-mer size for encoding.
+ * @param totalBases Total base count across all reads, from countFastqBases().
  * @return Populated KmerTable.
  */
-static KmerTable loadReads(const std::string& path, size_t k) {
+static KmerTable loadReads(const std::string& path, size_t k, size_t totalBases) {
     std::ifstream file(path);
     if (!file.is_open())
         throw std::runtime_error("Could not open file: " + path);
 
-    KmerTable kTable(ESTIMATED_TOTAL_BASES, k);
+    KmerTable kTable(totalBases, k);
     SequenceReader::encodeAllReads(file, k, kTable);
     file.close();
 
@@ -75,21 +96,25 @@ static void assembleContigs(DeBruijnGraph& graph) {
 
 int main() {
     try {
-        const std::string path = "../Data/" + sequence[7];
-        std::cout << "File: " << sequence[7] << "\n";
+        const std::string path = ConsoleInput::promptFilePath(
+            "FASTQ file path: ");
 
-        const std::vector<size_t> kValues = { 9, 11, 13, 15 };
+        const size_t totalBases = countFastqBases(path);
+        std::cout << "Total bases:     " << totalBases << "\n";
+        std::cout << "--------------------------------------\n";
 
-        for (size_t i = 0; i < kValues.size(); ++i) {
-            size_t k = kValues[i];
-            std::cout << "======================================\n";
-            std::cout << "TEST CASE [" << i + 1 << "]: k = " << k << "\n";
-            std::cout << "======================================\n";
+        const size_t maxK = std::min<size_t>(63, totalBases);
 
-            KmerTable kTable  = loadReads(path, k);
+        do {
+            size_t k = ConsoleInput::promptSizeT("K-mer size", 2, maxK);
+
+            std::cout << "--------------------------------------\n";
+            std::cout << "Kmer size: " << k << "\n";
+
+            KmerTable kTable  = loadReads(path, k, totalBases);
             DeBruijnGraph graph = buildGraph(kTable, k);
             assembleContigs(graph);
-        }
+        } while (ConsoleInput::promptYesNo("Assemble again with a different k?"));
 
     } catch (const std::exception& e) {
         std::cout << "Error: " << e.what() << "\n";

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -8,15 +9,51 @@
 #include "assembler/core/vis_data.h"
 #include "assembler/core/recorder.h"
 
+#include "assembler/construction/kmer_encoding.h"
 #include "assembler/construction/scaffolder.h"
 #include "assembler/construction/contig_assembler.h"
 #include "assembler/io/sequence_reader.h"
+#include "assembler/io/console_input.h"
+#include "assembler/graphics/vis_exporter.h"
 
 // CONSTANTS
 
 static constexpr size_t UNKNOWN_GAP_NS    = 10;
 static constexpr size_t INTER_SCAFFOLD_NS = 10;
 static constexpr size_t FASTA_LINE_WIDTH  = 60;
+
+// STAGE 0 - Determine table sizing
+
+/**
+ * @brief Pre-scans a FASTQ file to sum every read's sequence length, so the
+ *        KmerTable can be sized correctly without asking the user to guess
+ *        an estimate (the table does not support rehashing mid-run).
+ */
+static size_t countFastqBases(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open())
+        throw std::runtime_error("Could not open file: " + path);
+
+    size_t totalBases = 0;
+    std::string line;
+    size_t lineIndex = 0;
+    while (std::getline(file, line)) {
+        if (lineIndex % 4 == 1) totalBases += line.length();
+        ++lineIndex;
+    }
+    return totalBases;
+}
+
+/**
+ * @brief Derives a display name for the assembled genome from the input
+ *        file's base name (strips directory and extension).
+ */
+static std::string deriveGenomeName(const std::string& path) {
+    size_t slash = path.find_last_of("/\\");
+    std::string filename = (slash == std::string::npos) ? path : path.substr(slash + 1);
+    size_t dot = filename.find_last_of('.');
+    return (dot == std::string::npos) ? filename : filename.substr(0, dot);
+}
 
 // STAGE 1 - Load reads
 
@@ -91,7 +128,7 @@ static void writeScaffoldFasta(
     const std::string& strategyName)
 {
     const std::string filename =
-        "../data/output/scaffolds_k" + std::to_string(k) + "_" + strategyName + ".fna";
+        "../data/results/scaffolds_k" + std::to_string(k) + "_" + strategyName + ".fna";
 
     std::ofstream out(filename);
     if (!out.is_open())
@@ -131,8 +168,12 @@ static void writeFullGenomeFasta(
     const std::vector<Scaffold>& scaffolds,
     const std::vector<ContigAssembler::Contig>& contigs,
     const std::string& genomeName,
-    const std::string& outputPath)
+    size_t k,
+    const std::string& strategyName)
 {
+    const std::string outputPath =
+        "../data/results/genome_k" + std::to_string(k) + "_" + strategyName + ".fna";
+
     std::ofstream out(outputPath);
     if (!out.is_open())
         throw std::runtime_error("Could not write output file: " + outputPath);
@@ -179,84 +220,77 @@ static void writeVisData(const std::vector<ContigAssembler::Contig>& contigs, co
 
     scaffolder.toVisSession(session, k - 1);
 
-    // Visdata file output location
-
     const std::string visPath =
         "../data/results/assembly_k" + std::to_string(k) + "_" + strategyName + ".visdata";
 
-    const std::string fastaPath =
-        "../data/results/full_reconstructed_genome.fna";
-
-    const std::string scaffoldFastaPath =
-        "../data/results/scaffolds_k" + std::to_string(k) + "_" + strategyName + ".fna";
+    VisExporter::write(session, visPath);
+    std::cout << "Visualization data written: " << visPath << "\n";
 }
 
 // MAIN PIPELINE
 
+static const std::vector<std::string> STRATEGY_NAMES = { "skip", "greedy", "scored" };
+
+static ResolutionStrategy strategyByIndex(size_t index) {
+    switch (index) {
+        case 0:  return ResolutionStrategy::skip();
+        case 1:  return ResolutionStrategy::greedy();
+        default: return ResolutionStrategy::scored();
+    }
+}
+
 int main() {
     try {
-        const std::string path           = "../data/genomic/[7]short reads test.fastq";
-        const size_t estimatedTotalBases = 100000;
+        const std::string path = ConsoleInput::promptFilePath(
+            "FASTQ file path: ");
 
-        // Phase 1 (multiple strategy testing option)
+        const size_t totalBases = countFastqBases(path);
+        std::cout << "Total bases:     " << totalBases << "\n";
+        std::cout << "--------------------------------------\n";
 
-        const std::vector<size_t> kValues = {15};
+        const size_t maxK = std::min<size_t>(KmerEncoding::MAX_K_128, totalBases);
+        const std::string genomeName = deriveGenomeName(path);
 
-        const std::vector<std::pair<ResolutionStrategy, std::string>> strategies = {
-            { ResolutionStrategy::skip(),   "skip"   },
-            { ResolutionStrategy::greedy(), "greedy" },
-            { ResolutionStrategy::scored(), "scored" },
-        };
+        do {
+            size_t k = ConsoleInput::promptSizeT("K-mer size", 2, maxK);
 
-        for (size_t k : kValues) {
+            size_t strategyIndex = ConsoleInput::promptChoice(
+                "Resolution strategy:",
+                { "skip   - never resolve ambiguous branches",
+                  "greedy - take the highest length-scoring edge",
+                  "scored - weighted length + k-mer frequency + overlap quality" });
+            const std::string&  strategyName = STRATEGY_NAMES[strategyIndex];
+            ResolutionStrategy  strategy     = strategyByIndex(strategyIndex);
+
+            bool recordAnimation = ConsoleInput::promptYesNo(
+                "Record a .visdata trace for the visualizer?");
+
             std::cout << "======================================\n";
-            std::cout << "K = " << k << "\n";
+            std::cout << "K = " << k << ", strategy = " << strategyName << "\n";
             std::cout << "======================================\n";
 
-            for (const auto& [strategy, strategyName] : strategies) {
-                std::cout << "--------------------------------------\n";
-                std::cout << "Strategy: " << strategyName << "\n";
-                std::cout << "--------------------------------------\n";
+            // Set up session and recorder BEFORE traversal so steps are captured
+            VisSession session;
+            Recorder   recorder(&session);
 
-                KmerTable     kTable = loadReads(path, k, estimatedTotalBases);
-                DeBruijnGraph graph  = buildGraph(kTable, k);
-                auto          contigs = buildContigs(graph); // no recorder
+            KmerTable     kTable = loadReads(path, k, totalBases);
+            DeBruijnGraph graph  = buildGraph(kTable, k);
 
-                const KmerTable* kTablePtr =
-                    (strategyName == "scored") ? &kTable : nullptr;
+            std::vector<ContigAssembler::Contig> contigs = recordAnimation
+                ? buildContigs(graph, recorder)
+                : buildContigs(graph);
 
-                Scaffolder scaffolder =
-                    buildScaffolds(contigs, graph, strategy, kTablePtr);
+            const KmerTable* kTablePtr = (strategyName == "scored") ? &kTable : nullptr;
 
-                writeScaffoldFasta(scaffolder.getScaffolds(), contigs, k, strategyName);
-            }
-        }
+            Scaffolder scaffolder = buildScaffolds(contigs, graph, strategy, kTablePtr);
 
-        // Phase 2
+            writeScaffoldFasta(scaffolder.getScaffolds(), contigs, k, strategyName);
+            writeFullGenomeFasta(scaffolder.getScaffolds(), contigs, genomeName, k, strategyName);
 
-        const size_t primaryK = 7;
-        const std::string primaryStrategy = "scored";
+            if (recordAnimation)
+                writeVisData(contigs, scaffolder, session, path, strategyName, k);
 
-        std::cout << "======================================\n";
-        std::cout << "Primary run: k=" << primaryK
-                  << ", strategy=" << primaryStrategy << "\n";
-        std::cout << "======================================\n";
-
-        // Set up session and recorder BEFORE traversal so steps are captured
-        VisSession session;
-        Recorder   recorder(&session);
-
-        KmerTable     kTable  = loadReads(path, primaryK, estimatedTotalBases);
-        DeBruijnGraph graph   = buildGraph(kTable, primaryK);
-
-        // Use recorder overload so animation steps are captured
-        auto contigs = buildContigs(graph, recorder);
-
-        Scaffolder scaffolder = buildScaffolds(
-            contigs, graph, ResolutionStrategy::scored(), &kTable);
-
-        // Write .visdata to populate session metadata and contig/scaffold structs
-        writeVisData(contigs, scaffolder, session, path, primaryStrategy, primaryK);
+        } while (ConsoleInput::promptYesNo("Run again with different settings?"));
 
     } catch (const std::exception& e) {
         std::cout << "Error: " << e.what() << "\n";

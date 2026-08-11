@@ -1,7 +1,7 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
-#include "assembler/core/data_list.h"
 #include "assembler/core/dna_sequence.h"
 #include "assembler/core/kmer_table.h"
 #include "assembler/core/de_bruijn_graph.h"
@@ -10,6 +10,7 @@
 #include "assembler/construction/contig_assembler.h"
 
 #include "assembler/io/sequence_reader.h"
+#include "assembler/io/console_input.h"
 
 
 // PIPELINE STAGES
@@ -75,21 +76,24 @@ static void assembleContigs(DeBruijnGraph& graph) {
 
 int main() {
     try {
-        const std::string path = "../Data/" + sequence[0];
+        const std::string path = ConsoleInput::promptFilePath(
+            "FASTA file path: ");
 
         DNASequence genome = loadGenome(path);
         std::cout << genome.getName() << "\n";
         std::cout << "Sequence length: " << genome.getLength() << " bases\n";
         std::cout << "--------------------------------------\n";
 
-        std::vector testCases = {5, 20, 40, 60};
+        const size_t maxK = std::min<size_t>(KmerEncoding::MAX_K_128, genome.getLength());
 
-        for (int i = 0 ; i < testCases.size(); i++) {
-            int k = testCases[i];
-            std::cout << "TEST CASE [" << i + 1 << "]: k = " << k << std::endl;
-            DeBruijnGraph graph = buildGraph(genome.getSequence(), k, false);
+        do {
+            size_t k = ConsoleInput::promptSizeT("K-mer size", 2, maxK);
+
+            std::cout << "--------------------------------------\n";
+            std::cout << "Kmer size: " << k << "\n";
+            DeBruijnGraph graph = buildGraph(genome.getSequence(), static_cast<int>(k), false);
             assembleContigs(graph);
-        }
+        } while (ConsoleInput::promptYesNo("Assemble again with a different k?"));
 
     } catch (const std::exception& e) {
         std::cout << "Error: " << e.what() << "\n";

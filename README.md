@@ -167,7 +167,7 @@ include/assembler/
 
 media/                # Images included in README
 src/                  # Mirrors include/ layout, also includes configuration pipelines
-tests/                # initalization_tests, processing-tests, construction-tests
+tests/                # initialization_tests, processing_tests, construction_tests, scaffolder_tests
 data/
 ├── genomic/          # Input FASTA/FASTQ test genomes
 ├── results/          # Output from UI pipeline
@@ -190,34 +190,37 @@ cmake --build build
 ```
 
 This produces several executables (see [Usage](#usage) below) plus the
-`Visualizer`.
+`user_interface` visualizer.
 
 ## Usage
 
 **Run an assembly pipeline**
 
 ```bash
-./ScaffoldAssembly        # full pipeline: reads → contigs → scaffolds → FASTA + .visdata
-./FastaEulerianAssembly   # Eulerian path/circuit reconstruction from a FASTA genome
-./FastaContigAssembly     # contig-based assembly from a FASTA genome
-./FastqContigAssembly     # contig-based assembly from FASTQ reads
+./scaffold_assembly        # full pipeline: reads → contigs → scaffolds → FASTA + .visdata
+./fasta_eulerian_assembly  # Eulerian path/circuit reconstruction from a FASTA genome
+./fasta_contig_assembly    # contig-based assembly from a FASTA genome
+./fastq_scaffold_assembly  # contig-based assembly from FASTQ reads
 ```
 
-Each pipeline currently selects its input from `data/genomic/` and prints
-graph/contig/scaffold statistics to stdout as it runs.
+Each pipeline prompts interactively for the information it needs - file
+path, k-mer size, and (for `scaffold_assembly`) resolution strategy - and
+re-prompts on invalid input (unreadable path, non-numeric or out-of-range
+k, unrecognized menu choice) instead of failing partway through a run.
+`scaffold_assembly` also determines its k-mer table sizing automatically
+by scanning the input file, rather than asking for an estimate. Each
+pipeline prints graph/contig/scaffold statistics to stdout as it runs and
+offers to run again with different settings before exiting.
 
 **Run the visualizer**
 
 ```bash
-./Visualizer
+./user_interface
 ```
 
 ## Known Issues & Roadmap
 
 **Open bugs (tracked, not yet fixed)**
-- Test files (`initialization_tests.cpp`, `processing_tests.cpp`,
-  `construction_tests.cpp`) were used to validate early stage results. These files now 
-  reference stale include paths and outdated class names from before a project restructure
 - `NodeNotFoundException` takes `uint64_t` instead of `__uint128_t`,
   silently truncating node IDs for k > 33 due to a change to primarily using `__uint128_t`
 - `contig_assembler` doesn't yet initiate walks from sink nodes in every
