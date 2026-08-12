@@ -5,8 +5,9 @@
  * - Called by gui.cpp at startup when a file is selected.
  * Important notes:
  * - NodeId hi:lo hex pairs are decoded back into __uint128_t.
- * - RUN blocks in the contig step section are expanded into individual
- *   BaseAppended steps so contig_view's animator sees a flat step list.
+ * - RUN blocks in the contig step section carry an aggregate base count
+ *   directly (RUN <contigIndex> <count>) - one BaseAppended step per run,
+ *   not one per base. ContigView interpolates fill fraction from the count.
  * - Section order in the file must match vis_exporter's write order.
  * - Unknown section headers are skipped for forward compatibility.
  */
@@ -36,7 +37,7 @@ public:
 
 private:
 
-    static constexpr int FORMAT_VERSION = 2;
+    static constexpr int FORMAT_VERSION = 3;
 
     /**
      * @brief Decodes a "hi:lo" hex string back into a NodeId (__uint128_t).
@@ -69,11 +70,13 @@ private:
     static HeaderCounts parseHeader(std::istream& in, VisSession& session);
 
     /**
-     *
-     * @param in
-     * @param session
+     * @brief Parses the BEGIN_GENOME ... END_GENOME block.
+     * Reserves session.genomeSequence's capacity from counts.genomeLength
+     * before reading, so the getline doesn't reallocate/copy repeatedly
+     * while growing to fit a multi-million-base genome.
      */
-    static void parseGenome(std::istream& in, VisSession& session);
+    static void parseGenome(std::istream& in, VisSession& session,
+                            const HeaderCounts& counts);
 
     /**
      * @brief Parses the BEGIN_CONTIGS ... END_CONTIGS block.
@@ -95,7 +98,7 @@ private:
 
     /**
      * @brief Parses the BEGIN_CONTIG_STEPS ... END_CONTIG_STEPS block.
-     * Expands RUN blocks into individual BaseAppended steps.
+     * Each RUN line becomes a single BaseAppended step carrying its count.
      */
     static void parseContigSteps(std::istream& in, VisSession& session,
                                  const HeaderCounts& counts);

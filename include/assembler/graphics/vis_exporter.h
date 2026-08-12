@@ -39,7 +39,10 @@ private:
     // Current file format version. Increment if the format changes
     // in a way that breaks backward compatibility with DataLoader.
     // v2: added the GAPFILL_COUNT header field and BEGIN_GAPFILLS section.
-    static constexpr int FORMAT_VERSION = 2;
+    // v3: RUN lines are now "RUN <contigIndex> <count>" - the actual base
+    //     characters are no longer written, since they duplicated the
+    //     contig's SEQ line and made CONTIG_STEPS grow with genome size.
+    static constexpr int FORMAT_VERSION = 3;
 
     /**
      * @brief Encodes a NodeId as a "hi:lo" hex string.
@@ -81,9 +84,10 @@ private:
 
     /**
      * @brief Writes the contig animation step list.
-     * Each step is one line. BaseAppended steps are compacted into
-     * run-length encoded RUN blocks to keep file size manageable
-     * for long sequences.
+     * Each step is one line. Consecutive BaseAppended steps for the same
+     * contig are coalesced into a single RUN <contigIndex> <count> line -
+     * the base characters themselves are not written, since the full
+     * sequence is already available from that contig's SEQ line.
      */
     static void writeContigSteps(std::ostream& out, const VisSession& session);
 

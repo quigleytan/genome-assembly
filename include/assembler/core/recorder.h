@@ -53,7 +53,14 @@ public:
     /**
      * @brief Records that a single base was appended to the current contig.
      *
-     * Called once per node consumed inside walkContig()'s main loop.
+     * Called once per node consumed inside walkContig()'s main loop. Rather
+     * than pushing a new TraversalStep for every base (which made
+     * contigSteps grow O(total bases) - hundreds of MB of step structs for
+     * multi-million-base genomes, and made scrubbing the animation slider
+     * O(bases) per drag), this coalesces consecutive base-appends for the
+     * same contig into a single step with a running count. Playback in
+     * ContigView interpolates fill fraction from that count instead of
+     * requiring one discrete step per base.
      *
      * @param contigIndex Index of the contig being built.
      * @param base        The character appended (last char of the next node's decoded label).
@@ -61,11 +68,24 @@ public:
      */
     void baseAppended(size_t contigIndex, char base, NodeId toNode) {
         if (!session_) return;
+
+        auto& steps = session_->contigSteps;
+        if (!steps.empty() &&
+            steps.back().type        == TraversalStep::Type::BaseAppended &&
+            steps.back().contigIndex == contigIndex) {
+            TraversalStep& run = steps.back();
+            ++run.count;
+            run.base = base;
+            run.to   = toNode;
+            return;
+        }
+
         TraversalStep step;
         step.type        = TraversalStep::Type::BaseAppended;
         step.contigIndex = contigIndex;
         step.base        = base;
         step.to          = toNode;
+        step.count       = 1;
         session_->contigSteps.push_back(std::move(step));
     }
 

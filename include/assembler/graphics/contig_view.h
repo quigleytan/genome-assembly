@@ -9,6 +9,10 @@
  * - Animation interpolates bar width between ContigStarted and ContigFinished
  *   so playback is readable at any speed regardless of sequence length.
  * - selectedContig_ drives the detail panel - -1 means nothing selected.
+ * - The Genome Map tab only draws/hit-tests rows currently scrolled into
+ *   view (see renderGenomeMapTab/findSegmentIndex) - genomeSequence can run
+ *   to millions of bases, and drawing every row every frame regardless of
+ *   scroll position made the tab unusable at that scale.
  */
 
 #ifndef CONTIG_VIEW_H
@@ -71,9 +75,15 @@ private:
     // ANIMATION STATE
     size_t currentStep_  = 0;
     bool   playing_      = false;
-    float  accumulator_  = 0.0f;  // Fractional steps carried between frames
+    float  accumulator_  = 0.0f;  // Fractional bases carried between frames
+    size_t stepProgress_ = 0;     // Bases already applied from the in-progress
+                                   // BaseAppended step at currentStep_ (0 if
+                                   // currentStep_ hasn't started or isn't a
+                                   // BaseAppended run) - lets Play smoothly
+                                   // interpolate within a multi-base run
+                                   // instead of jumping the whole run at once.
 
-    // Fixed speed presets - steps per second
+    // Fixed speed presets - bases per second
     static constexpr float SPEED_PRESETS[]    = { 10.0f, 50.0f, 200.0f, 1000.0f };
     static constexpr const char* SPEED_LABELS[] = { "0.5x", "1x", "5x", "50x" };
     static constexpr int   NUM_PRESETS        = 4;
@@ -146,10 +156,19 @@ private:
     float barWidth(size_t contigIndex) const;
 
     /**
-     * @brief Applies a single TraversalStep to the display state.
-     * Called by update() for each step consumed this frame.
+     * @brief Applies a single TraversalStep to the display state in full.
+     * For a BaseAppended step this adds its entire count at once - used by
+     * seekToStep() (and update() for non-BaseAppended steps), not by the
+     * smooth-playback path, which instead calls addBases() incrementally.
      */
     void applyStep(const TraversalStep& step);
+
+    /**
+     * @brief Adds n bases to contigIndex's running total and refreshes its
+     *        fillFraction. Shared by applyStep() (full run at once) and
+     *        update() (partial run, for smooth interpolated playback).
+     */
+    void addBases(size_t contigIndex, size_t n);
 
     /**
      * @brief Resets the display state and replays from step 0.
@@ -163,6 +182,17 @@ private:
      * Used when the user drags the timeline slider.
      */
     void seekToStep(size_t targetStep);
+
+    /**
+     * @brief Binary-searches genomeSegments_ (sorted, contiguous, covering
+     *        the full genome) for the segment containing base position pos.
+     *        Used to seed segIdx when the Genome Map tab starts drawing
+     *        partway through the genome (i.e. anywhere the view is
+     *        scrolled to), instead of always walking forward from segment 0.
+     * @param pos Base position within genomeSequence.
+     * @return Index into genomeSegments_ of the segment containing pos.
+     */
+    size_t findSegmentIndex(size_t pos) const;
 
     // Sub-render methods for different UI sections
 

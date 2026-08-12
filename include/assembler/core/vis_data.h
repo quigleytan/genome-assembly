@@ -27,7 +27,7 @@ struct TraversalStep {
     enum class Type {
         // Contig animation events
         ContigStarted,    // A new walkContig() call has begun
-        BaseAppended,     // One base was added to the current contig sequence
+        BaseAppended,     // A run of consecutive bases was added to the current contig
         ContigFinished,   // walkContig() returned: contig is complete
 
     };
@@ -39,6 +39,11 @@ struct TraversalStep {
     // Contig step fields
     size_t contigIndex = 0; // Which contig this step belongs to
     char   base        = 0; // The base appended (BaseAppended steps only)
+    size_t count       = 0; // Number of bases this run covers (BaseAppended only).
+                            // Recorder coalesces consecutive same-contig
+                            // base-append calls into one step with a running
+                            // count instead of one step per base, so replaying
+                            // a contig's growth is O(contigs) not O(bases).
     std::string sequence;   // Full sequence snapshot (ContigFinished only,
                             // avoids storing partial strings at every step)
 };

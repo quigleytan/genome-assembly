@@ -143,6 +143,21 @@ void ContigView::buildGenomeSegments() {
     genomeSegments_.push_back(seg);
 }
 
+size_t ContigView::findSegmentIndex(size_t pos) const {
+    if (genomeSegments_.empty()) return 0;
+
+    // genomeSegments_ is sorted by startPos and covers [0, genome length)
+    // contiguously with no gaps between entries, so "last segment with
+    // startPos <= pos" is always the (unique) segment containing pos.
+    auto it = std::upper_bound(
+        genomeSegments_.begin(), genomeSegments_.end(), pos,
+        [](size_t value, const GenomeSegment& seg) { return value < seg.startPos; });
+
+    if (it == genomeSegments_.begin()) return 0;
+    --it;
+    return static_cast<size_t>(std::distance(genomeSegments_.begin(), it));
+}
+
 // COLOR HELPERS
 
 uint32_t ContigView::hsvToImCol32(float h, float s, float v, float a) {
@@ -199,6 +214,18 @@ float ContigView::barWidth(size_t contigIndex) const {
 
 // ANIMATION
 
+void ContigView::addBases(size_t contigIndex, size_t n) {
+    if (contigIndex >= displayStates_.size() || n == 0) return;
+
+    ContigDisplayState& ds = displayStates_[contigIndex];
+    ds.basesAppended += n;
+
+    size_t totalBases = session_.contigs[contigIndex].sequence.length();
+    if (totalBases > 0)
+        ds.fillFraction = static_cast<float>(ds.basesAppended)
+                        / static_cast<float>(totalBases);
+}
+
 void ContigView::applyStep(const TraversalStep& step) {
     const size_t idx = step.contigIndex;
     if (idx >= displayStates_.size()) return;
@@ -213,14 +240,9 @@ void ContigView::applyStep(const TraversalStep& step) {
             ds.basesAppended = 0;
             break;
 
-        case TraversalStep::Type::BaseAppended: {
-            ++ds.basesAppended;
-            size_t totalBases = session_.contigs[idx].sequence.length();
-            if (totalBases > 0)
-                ds.fillFraction = static_cast<float>(ds.basesAppended)
-                                / static_cast<float>(totalBases);
+        case TraversalStep::Type::BaseAppended:
+            addBases(idx, step.count);
             break;
-        }
 
         case TraversalStep::Type::ContigFinished:
             ds.fillFraction  = 1.0f;
@@ -234,9 +256,10 @@ void ContigView::applyStep(const TraversalStep& step) {
 
 void ContigView::resetAnimation() {
     // Clears all animation state values
-    currentStep_ = 0;
-    accumulator_ = 0.0f;
-    playing_     = false;
+    currentStep_  = 0;
+    accumulator_  = 0.0f;
+    stepProgress_ = 0;
+    playing_      = false;
     for (auto& ds : displayStates_) {
         ds.visible       = false;
         ds.fillFraction  = 0.0f;
@@ -266,13 +289,38 @@ void ContigView::update(float deltaTime) {
         return;
     }
 
-    float stepsPerSecond = SPEED_PRESETS[speedPresetIndex_];
-    accumulator_ += deltaTime * stepsPerSecond;
+    // Speed presets are bases/second. A BaseAppended step can now cover many
+    // bases at once (see Recorder::baseAppended), so playback advances in
+    // base-units rather than one discrete step per frame-tick: structural
+    // events (start/finish) apply instantly and free, while a BaseAppended
+    // step's count is drained incrementally via stepProgress_ so the bar
+    // still visibly grows base-by-base instead of jumping in one step.
+    const float basesPerSecond = SPEED_PRESETS[speedPresetIndex_];
+    accumulator_ += deltaTime * basesPerSecond;
 
-    while (accumulator_ >= 1.0f && currentStep_ < session_.contigSteps.size()) {
-        applyStep(session_.contigSteps[currentStep_]);
-        ++currentStep_;
-        accumulator_ -= 1.0f;
+    while (accumulator_ > 0.0f && currentStep_ < session_.contigSteps.size()) {
+        const TraversalStep& step = session_.contigSteps[currentStep_];
+
+        if (step.type != TraversalStep::Type::BaseAppended) {
+            applyStep(step);
+            ++currentStep_;
+            stepProgress_ = 0;
+            continue;
+        }
+
+        const size_t remaining = step.count - stepProgress_;
+        const size_t take = std::min(remaining, static_cast<size_t>(accumulator_));
+
+        if (take == 0) break; // Not enough accumulated budget for one more base yet.
+
+        addBases(step.contigIndex, take);
+        stepProgress_ += take;
+        accumulator_  -= static_cast<float>(take);
+
+        if (stepProgress_ >= step.count) {
+            stepProgress_ = 0;
+            ++currentStep_;
+        }
     }
 
     if (currentStep_ >= session_.contigSteps.size())
@@ -318,110 +366,117 @@ void ContigView::renderGenomeMapTab(float availHeight) {
     origin.x += 8.0f;
     origin.y += 4.0f;
 
-    size_t segIdx = 0;
+    // Only draw/hit-test rows currently scrolled into view. genomeSequence
+    // can run to millions of bases, and this tab used to iterate every row
+    // (draw pass) and every segment-row span (click-detection pass)
+    // unconditionally every frame regardless of scroll position - fine for
+    // a few thousand bases, unusable well before a few million.
+    constexpr size_t ROW_MARGIN = 2; // extra rows drawn beyond the visible edge, to avoid pop-in
+    const float scrollY = ImGui::GetScrollY();
+    size_t firstVisibleRow = (scrollY > 0.0f) ? static_cast<size_t>(scrollY / rowHeight) : 0;
+    firstVisibleRow = (firstVisibleRow > ROW_MARGIN) ? firstVisibleRow - ROW_MARGIN : 0;
 
-    for (size_t row = 0; row < totalRows; ++row) {
-        size_t rowStart = row * static_cast<size_t>(basesPerRow);
-        size_t rowEnd   = std::min(rowStart + static_cast<size_t>(basesPerRow), totalBases);
+    const size_t rowsInView   = static_cast<size_t>(availHeight / rowHeight) + 2 * ROW_MARGIN + 2;
+    const size_t lastVisibleRow = (totalRows == 0) ? 0
+        : std::min(totalRows - 1, firstVisibleRow + rowsInView);
 
-        for (size_t pos = rowStart; pos < rowEnd; ++pos) {
+    if (totalRows > 0) {
+        size_t rowStartPos = firstVisibleRow * static_cast<size_t>(basesPerRow);
+        size_t segIdx = findSegmentIndex(std::min(rowStartPos, totalBases - 1));
 
-            // Advance to the segment that contains this position
-            while (segIdx + 1 < genomeSegments_.size() &&
-                   pos >= genomeSegments_[segIdx].startPos + genomeSegments_[segIdx].length)
-                ++segIdx;
+        for (size_t row = firstVisibleRow; row <= lastVisibleRow; ++row) {
+            size_t rowStart = row * static_cast<size_t>(basesPerRow);
+            size_t rowEnd   = std::min(rowStart + static_cast<size_t>(basesPerRow), totalBases);
+            if (rowStart >= rowEnd) break;
 
-            const GenomeSegment& seg = genomeSegments_[segIdx];
+            size_t pos = rowStart;
+            while (pos < rowEnd) {
 
-            float cellX = origin.x + static_cast<float>(pos - rowStart) * CELL_WIDTH;
-            float cellY = origin.y + static_cast<float>(row) * rowHeight;
-            ImVec2 cellMin = { cellX,              cellY            };
-            ImVec2 cellMax = { cellX + CELL_WIDTH, cellY + CELL_HEIGHT };
+                // Advance to the segment that contains this position
+                while (segIdx + 1 < genomeSegments_.size() &&
+                       pos >= genomeSegments_[segIdx].startPos + genomeSegments_[segIdx].length)
+                    ++segIdx;
 
-            // Choose color
-            uint32_t color;
-            if (seg.type == GenomeSegment::Type::Gap) {
-                // Amber = bridged via local reassembly, dark gray = N-padded (unresolved)
-                color = seg.resolved
-                    ? IM_COL32(214, 168, 60, 255)
-                    : IM_COL32(80, 80, 80, 255);
-            } else {
-                color = scaffoldColor(seg.index);
-                // Dim segments whose scaffold hasn't appeared in animation yet
-                if (seg.index < session_.scaffolds.size()) {
-                    const VisScaffold& vs = session_.scaffolds[seg.index];
-                    bool anyVisible = false;
-                    for (size_t ci : vs.contigIndices) {
-                        if (ci < displayStates_.size() && displayStates_[ci].visible) {
-                            anyVisible = true;
-                            break;
-                        }
-                    }
-                    if (!anyVisible)
-                        color = IM_COL32(40, 40, 40, 255);
-                }
-            }
+                const GenomeSegment& seg = genomeSegments_[segIdx];
+                size_t spanEnd = std::min(rowEnd, seg.startPos + seg.length);
+                if (spanEnd <= pos) { ++pos; continue; } // defensive: never stall on a malformed segment
 
-            drawList->AddRectFilled(cellMin, cellMax, color);
-
-            // Grid lines between cells
-            drawList->AddRect(cellMin, cellMax,
-                              IM_COL32(20, 20, 20, 60), 0.0f, 0, 0.5f);
-
-            // Selection highlight
-            if (static_cast<int>(segIdx) == selectedSegment_) {
-                drawList->AddRect(cellMin, cellMax,
-                                  IM_COL32(255, 255, 255, 200), 0.0f, 0, 1.5f);
-            }
-        }
-    }
-
-    // Click detection
-    for (size_t si = 0; si < genomeSegments_.size(); ++si) {
-        const GenomeSegment& seg = genomeSegments_[si];
-
-        size_t pos    = seg.startPos;
-        size_t segEnd = seg.startPos + seg.length;
-
-        while (pos < segEnd) {
-            size_t row = pos / static_cast<size_t>(basesPerRow);
-            size_t col = pos % static_cast<size_t>(basesPerRow);
-
-            size_t rowEnd    = std::min(segEnd, (row + 1) * static_cast<size_t>(basesPerRow));
-            size_t rowBases  = rowEnd - pos;
-
-            float cellX = origin.x + static_cast<float>(col) * CELL_WIDTH;
-            float cellY = origin.y + static_cast<float>(row) * rowHeight;
-
-            ImGui::SetCursorScreenPos({ cellX, cellY });
-            ImGui::InvisibleButton(
-                ("##seg" + std::to_string(si) + "_r" + std::to_string(row)).c_str(),
-                ImVec2(static_cast<float>(rowBases) * CELL_WIDTH, CELL_HEIGHT));
-
-            if (ImGui::IsItemClicked()) {
-                selectedSegment_ = static_cast<int>(si);
-                selectedContig_  = -1;
-            }
-
-            if (ImGui::IsItemHovered()) {
-                ImGui::BeginTooltip();
+                // Choose color
+                uint32_t color;
                 if (seg.type == GenomeSegment::Type::Gap) {
-                    ImGui::Text(seg.resolved ? "Gap (resolved)" : "Gap (unresolved)");
-                    ImGui::Text("Length:    %zu bases", seg.length);
-                    ImGui::Text("Estimated: %zu bases", seg.estimatedGap);
-                    ImGui::Text("Position:  %zu", seg.startPos);
+                    // Amber = bridged via local reassembly, dark gray = N-padded (unresolved)
+                    color = seg.resolved
+                        ? IM_COL32(214, 168, 60, 255)
+                        : IM_COL32(80, 80, 80, 255);
                 } else {
-                    ImGui::Text("Scaffold %zu", seg.index);
-                    if (seg.index < session_.scaffolds.size())
-                        ImGui::Text("Contigs:  %zu",
-                            session_.scaffolds[seg.index].contigIndices.size());
-                    ImGui::Text("Length:   %zu bases", seg.length);
-                    ImGui::Text("Position: %zu", seg.startPos);
+                    color = scaffoldColor(seg.index);
+                    // Dim segments whose scaffold hasn't appeared in animation yet
+                    if (seg.index < session_.scaffolds.size()) {
+                        const VisScaffold& vs = session_.scaffolds[seg.index];
+                        bool anyVisible = false;
+                        for (size_t ci : vs.contigIndices) {
+                            if (ci < displayStates_.size() && displayStates_[ci].visible) {
+                                anyVisible = true;
+                                break;
+                            }
+                        }
+                        if (!anyVisible)
+                            color = IM_COL32(40, 40, 40, 255);
+                    }
                 }
-                ImGui::EndTooltip();
-            }
 
-            pos = rowEnd;
+                bool isSelected = (static_cast<int>(segIdx) == selectedSegment_);
+
+                // Draw each cell in this segment's span within the row
+                for (size_t cellPos = pos; cellPos < spanEnd; ++cellPos) {
+                    float cellX = origin.x + static_cast<float>(cellPos - rowStart) * CELL_WIDTH;
+                    float cellY = origin.y + static_cast<float>(row) * rowHeight;
+                    ImVec2 cellMin = { cellX,              cellY            };
+                    ImVec2 cellMax = { cellX + CELL_WIDTH, cellY + CELL_HEIGHT };
+
+                    drawList->AddRectFilled(cellMin, cellMax, color);
+                    drawList->AddRect(cellMin, cellMax,
+                                      IM_COL32(20, 20, 20, 60), 0.0f, 0, 0.5f);
+                    if (isSelected)
+                        drawList->AddRect(cellMin, cellMax,
+                                          IM_COL32(255, 255, 255, 200), 0.0f, 0, 1.5f);
+                }
+
+                // One click/hover region for this segment's span within the row
+                float spanX = origin.x + static_cast<float>(pos - rowStart) * CELL_WIDTH;
+                float spanY = origin.y + static_cast<float>(row) * rowHeight;
+                float spanW = static_cast<float>(spanEnd - pos) * CELL_WIDTH;
+
+                ImGui::SetCursorScreenPos({ spanX, spanY });
+                ImGui::InvisibleButton(
+                    ("##seg" + std::to_string(segIdx) + "_r" + std::to_string(row)).c_str(),
+                    ImVec2(spanW, CELL_HEIGHT));
+
+                if (ImGui::IsItemClicked()) {
+                    selectedSegment_ = static_cast<int>(segIdx);
+                    selectedContig_  = -1;
+                }
+
+                if (ImGui::IsItemHovered()) {
+                    ImGui::BeginTooltip();
+                    if (seg.type == GenomeSegment::Type::Gap) {
+                        ImGui::Text(seg.resolved ? "Gap (resolved)" : "Gap (unresolved)");
+                        ImGui::Text("Length:    %zu bases", seg.length);
+                        ImGui::Text("Estimated: %zu bases", seg.estimatedGap);
+                        ImGui::Text("Position:  %zu", seg.startPos);
+                    } else {
+                        ImGui::Text("Scaffold %zu", seg.index);
+                        if (seg.index < session_.scaffolds.size())
+                            ImGui::Text("Contigs:  %zu",
+                                session_.scaffolds[seg.index].contigIndices.size());
+                        ImGui::Text("Length:   %zu bases", seg.length);
+                        ImGui::Text("Position: %zu", seg.startPos);
+                    }
+                    ImGui::EndTooltip();
+                }
+
+                pos = spanEnd;
+            }
         }
     }
 

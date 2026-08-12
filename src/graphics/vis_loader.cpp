@@ -84,13 +84,17 @@ VisLoader::HeaderCounts VisLoader::parseHeader(std::istream& in, VisSession& ses
 
 // SEQUENCE
 
-void VisLoader::parseGenome(std::istream& in, VisSession& session) {
+void VisLoader::parseGenome(std::istream& in, VisSession& session,
+                             const HeaderCounts& counts) {
     std::string line;
     std::getline(in, line);
     if (line != "BEGIN_GENOME")
         throw std::runtime_error("vis_loader: expected BEGIN_GENOME, got: " + line);
 
-    // Read the genome sequence - single line
+    // Read the genome sequence - single line. Reserving up front avoids
+    // repeated reallocation/copying as getline grows the string to fit a
+    // multi-million-base genome.
+    session.genomeSequence.reserve(counts.genomeLength);
     std::getline(in, session.genomeSequence);
 
     // Consume END_GENOME
@@ -137,11 +141,12 @@ void VisLoader::parseContigs(std::istream& in, VisSession& session,
             // Next line must be the SEQ line
             std::string seqLine;
             std::getline(in, seqLine);
-            if (seqLine.substr(0, 4) != "SEQ ")
+            if (seqLine.compare(0, 4, "SEQ ") != 0)
                 throw std::runtime_error(
                     "vis_loader: expected SEQ after CONTIG " +
                     std::to_string(index));
-            c.sequence = seqLine.substr(4);
+            seqLine.erase(0, 4);
+            c.sequence = std::move(seqLine);
 
             session.contigs.push_back(std::move(c));
         }
@@ -265,18 +270,14 @@ void VisLoader::parseContigSteps(std::istream& in, VisSession& session,
             session.contigSteps.push_back(std::move(step));
 
         } else if (key == "RUN") {
-            // Expand run-length encoded base appends back into individual steps
             size_t contigIndex, count;
-            std::string bases;
-            iss >> contigIndex >> count >> bases;
+            iss >> contigIndex >> count;
 
-            for (char base : bases) {
-                TraversalStep step;
-                step.type        = TraversalStep::Type::BaseAppended;
-                step.contigIndex = contigIndex;
-                step.base        = base;
-                session.contigSteps.push_back(step);
-            }
+            TraversalStep step;
+            step.type        = TraversalStep::Type::BaseAppended;
+            step.contigIndex = contigIndex;
+            step.count       = count;
+            session.contigSteps.push_back(std::move(step));
 
         } else if (key == "FINISHED") {
             TraversalStep step;
@@ -303,7 +304,7 @@ VisSession VisLoader::load(const std::string& filePath) {
     VisSession session;
 
     HeaderCounts counts = parseHeader(in, session);
-    parseGenome(in, session);
+    parseGenome(in, session, counts);
     parseContigs(in, session, counts);
     parseScaffolds(in, session, counts);
     parseGapFills(in, session, counts);

@@ -115,16 +115,19 @@ void VisExporter::writeContigSteps(std::ostream& out, const VisSession& session)
         const TraversalStep& step = session.contigSteps[i];
 
         if (step.type == TraversalStep::Type::BaseAppended) {
-            // Collect consecutive BaseAppended steps for the same contig
+            // Recorder already coalesces consecutive same-contig base-appends
+            // into a single step with a running count, so this loop normally
+            // runs once - it stays defensive here for callers that build a
+            // VisSession by hand without going through Recorder.
             size_t j = i;
-            std::string bases;
+            size_t totalCount = 0;
             while (j < session.contigSteps.size()
                    && session.contigSteps[j].type == TraversalStep::Type::BaseAppended
                    && session.contigSteps[j].contigIndex == step.contigIndex) {
-                bases += session.contigSteps[j].base;
+                totalCount += session.contigSteps[j].count;
                 ++j;
             }
-            out << "RUN " << step.contigIndex << ' ' << bases.length() << ' ' << bases << '\n';
+            out << "RUN " << step.contigIndex << ' ' << totalCount << '\n';
             i = j;
 
         } else if (step.type == TraversalStep::Type::ContigStarted) {
