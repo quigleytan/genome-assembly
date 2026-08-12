@@ -12,6 +12,8 @@
 #include "assembler/construction/kmer_encoding.h"
 #include "assembler/construction/scaffolder.h"
 #include "assembler/construction/contig_assembler.h"
+#include "assembler/construction/gap_estimation.h"
+#include "assembler/construction/gap_filling.h"
 #include "assembler/io/sequence_reader.h"
 #include "assembler/io/console_input.h"
 #include "assembler/graphics/vis_exporter.h"
@@ -19,7 +21,6 @@
 // CONSTANTS
 
 static constexpr size_t UNKNOWN_GAP_NS    = 10;
-static constexpr size_t INTER_SCAFFOLD_NS = 10;
 static constexpr size_t FASTA_LINE_WIDTH  = 60;
 
 // STAGE 0 - Determine table sizing
@@ -164,12 +165,60 @@ static void writeScaffoldFasta(
 
 // STAGE 5b - Write full pseudo-genome FASTA
 
+struct GapFillStats {
+    size_t gapsResolved     = 0; // Bridged via local reassembly over the de Bruijn graph.
+    size_t gapsPadded       = 0; // No connecting path found within the search bound - N-padded.
+    size_t totalPaddedBases = 0;
+};
+
+/**
+ * @brief Concatenates every scaffold's contigs into one pseudo-genome, resolving
+ *        the junction between consecutive scaffolds via GapFiller.
+ *
+ * For each scaffold boundary, GapFiller first estimates the gap length from the
+ * k-mer frequency drop at the flanking contig ends, then attempts a bounded
+ * local reassembly over the graph. A resolved junction contributes its real
+ * bridging sequence; an unresolved one contributes an N-run sized to the estimate.
+ */
+static std::string buildGenomeSequence(
+    const std::vector<Scaffold>& scaffolds,
+    const std::vector<ContigAssembler::Contig>& contigs,
+    const GapFiller& filler,
+    GapFillStats& stats)
+{
+    std::string genome;
+    for (size_t i = 0; i < scaffolds.size(); ++i) {
+        for (const auto& entry : scaffolds[i].entries)
+            genome += contigs[entry.contigIndex].sequence;
+
+        if (i + 1 < scaffolds.size()) {
+            const ContigAssembler::Contig& upstream   = contigs[scaffolds[i].entries.back().contigIndex];
+            const ContigAssembler::Contig& downstream = contigs[scaffolds[i + 1].entries.front().contigIndex];
+
+            GapFiller::Result result = filler.fillGap(
+                upstream.sequence, upstream.endNode,
+                downstream.sequence, downstream.startNode);
+
+            if (result.resolved) {
+                genome += result.sequence;
+                ++stats.gapsResolved;
+            } else {
+                genome += std::string(result.gapEstimate, 'N');
+                ++stats.gapsPadded;
+                stats.totalPaddedBases += result.gapEstimate;
+            }
+        }
+    }
+    return genome;
+}
+
 static void writeFullGenomeFasta(
     const std::vector<Scaffold>& scaffolds,
     const std::vector<ContigAssembler::Contig>& contigs,
     const std::string& genomeName,
     size_t k,
-    const std::string& strategyName)
+    const std::string& strategyName,
+    const GapFiller& filler)
 {
     const std::string outputPath =
         "../data/results/genome_k" + std::to_string(k) + "_" + strategyName + ".fna";
@@ -178,24 +227,21 @@ static void writeFullGenomeFasta(
     if (!out.is_open())
         throw std::runtime_error("Could not write output file: " + outputPath);
 
-    std::string fullGenome;
-    for (size_t i = 0; i < scaffolds.size(); ++i) {
-        for (const auto& entry : scaffolds[i].entries)
-            fullGenome += contigs[entry.contigIndex].sequence;
-
-        if (i + 1 < scaffolds.size())
-            fullGenome += std::string(INTER_SCAFFOLD_NS, 'N');
-    }
+    GapFillStats stats;
+    std::string fullGenome = buildGenomeSequence(scaffolds, contigs, filler, stats);
 
     out << ">" << genomeName
         << " scaffolds=" << scaffolds.size()
-        << " gapNs=" << INTER_SCAFFOLD_NS << "\n";
+        << " gapsResolved=" << stats.gapsResolved
+        << " gapsPadded=" << stats.gapsPadded << "\n";
 
     for (size_t pos = 0; pos < fullGenome.size(); pos += FASTA_LINE_WIDTH)
         out << fullGenome.substr(pos, FASTA_LINE_WIDTH) << "\n";
 
     out.close();
     std::cout << "Full pseudo-genome written to: " << outputPath << "\n";
+    std::cout << "Gap resolution:  " << stats.gapsResolved << " resolved via local reassembly, "
+              << stats.gapsPadded << " padded with N (" << stats.totalPaddedBases << " bases)\n";
 }
 
 
@@ -203,20 +249,14 @@ static void writeFullGenomeFasta(
 
 static void writeVisData(const std::vector<ContigAssembler::Contig>& contigs, const Scaffolder& scaffolder,
                          VisSession& session, const std::string& sourcePath, const std::string& strategyName,
-                         size_t k) {
+                         size_t k, const GapFiller& filler) {
 
     session.k            = k;
     session.sourceFile   = sourcePath;
     session.strategyName = strategyName;
 
-    std::string genome;
-    for (size_t i = 0; i < scaffolder.getScaffolds().size(); ++i) {
-        for (const auto& entry : scaffolder.getScaffolds()[i].entries)
-            genome += contigs[entry.contigIndex].sequence;
-        if (i + 1 < scaffolder.getScaffolds().size())
-            genome += std::string(INTER_SCAFFOLD_NS, 'N');
-    }
-    session.genomeSequence = std::move(genome);
+    GapFillStats stats;
+    session.genomeSequence = buildGenomeSequence(scaffolder.getScaffolds(), contigs, filler, stats);
 
     scaffolder.toVisSession(session, k - 1);
 
@@ -284,11 +324,14 @@ int main() {
 
             Scaffolder scaffolder = buildScaffolds(contigs, graph, strategy, kTablePtr);
 
+            GapEstimator gapEstimator(kTable, k);
+            GapFiller    gapFiller(graph, gapEstimator);
+
             writeScaffoldFasta(scaffolder.getScaffolds(), contigs, k, strategyName);
-            writeFullGenomeFasta(scaffolder.getScaffolds(), contigs, genomeName, k, strategyName);
+            writeFullGenomeFasta(scaffolder.getScaffolds(), contigs, genomeName, k, strategyName, gapFiller);
 
             if (recordAnimation)
-                writeVisData(contigs, scaffolder, session, path, strategyName, k);
+                writeVisData(contigs, scaffolder, session, path, strategyName, k, gapFiller);
 
         } while (ConsoleInput::promptYesNo("Run again with different settings?"));
 

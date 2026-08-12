@@ -71,6 +71,7 @@ add_assembler_app(initialization_tests tests/initialization_tests.cpp src/core/d
 add_assembler_app(processing_tests tests/processing_tests.cpp src/construction/kmer_encoding.cpp src/core/dna_sequence.cpp)
 add_assembler_app(construction_tests tests/construction_tests.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 add_assembler_app(scaffolder_tests tests/scaffolder_tests.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
+add_assembler_app(gap_tests tests/gap_tests.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES})
 
 # Benchmark Tests
 add_assembler_app(benchmark_assembly src/pipelines/benchmark_assembly.cpp ${CORE_SOURCES} ${CONSTRUCTION_SOURCES} src/graphics/vis_exporter.cpp)
