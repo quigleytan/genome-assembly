@@ -43,7 +43,7 @@
 // ------------------------------------------------
 
 static constexpr int    NUM_RUNS         = 3;
-static constexpr char   DEFAULT_INPUT[]  = "../data/genomic/synthetic_3mb.fastq";
+static constexpr char   DEFAULT_INPUT[]  = "../data/results/synthetic_3mb.fastq";
 static constexpr char   DEFAULT_OUTPUT[] = "../data/results/benchmark_results.txt";
 static const std::vector<size_t> K_VALUES = { 15, 20, 25, 30, 35, 51 };
 

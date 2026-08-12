@@ -13,7 +13,7 @@
  *
  * Example:
  *   ./GenerateFastq 3500000 100 30 42
- *   → writes data/genomic/synthetic_3mb.fastq
+ *   → writes data/results/synthetic_3mb.fastq
  */
 
 #include <iostream>
@@ -29,11 +29,11 @@
 // CONSTANTS
 // ─────────────────────────────────────────────
 
-static constexpr size_t DEFAULT_GENOME_SIZE = 3500000; // 3.5 Mb
+static constexpr size_t DEFAULT_GENOME_SIZE = 500000 ;
 static constexpr size_t DEFAULT_READ_LEN    = 100;
 static constexpr size_t DEFAULT_COVERAGE    = 10;        // 10x
 static constexpr size_t DEFAULT_SEED        = 42;
-static constexpr char   OUTPUT_PATH[]       = "../data/genomic/synthetic_3mb.fastq";
+static constexpr char   OUTPUT_PATH[]       = "../data/results/synthetic_3mb.fastq";
 
 static const char BASES[] = { 'A', 'C', 'G', 'T' };
 
@@ -124,13 +124,13 @@ int main(int argc, char** argv) {
     if (argc >= 5) seed       = std::stoull(argv[4]);
 
     std::cout << "Synthetic FASTQ Generator\n";
-    std::cout << "─────────────────────────────────────\n";
+    std::cout << "--------------------------------------\n";
     std::cout << "Genome size: " << genomeSize  << " bp\n";
     std::cout << "Read length: " << readLen     << " bp\n";
     std::cout << "Coverage:    " << coverage    << "x\n";
     std::cout << "Seed:        " << seed        << "\n";
     std::cout << "Output:      " << OUTPUT_PATH << "\n";
-    std::cout << "─────────────────────────────────────\n";
+    std::cout << "--------------------------------------\n";
 
     // Ensure output directory exists
     std::filesystem::create_directories(
