@@ -64,7 +64,21 @@ struct VisScaffold {
     bool isCircular = false;
 };
 
+// GAP RESOLUTION
+//
+// One entry per junction between consecutive scaffolds in genomeSequence's
+// assembly order, i.e. VisSession::gapFills.size() == scaffolds.size() - 1
+// (0 if there are 0 or 1 scaffolds). gapFills[i] describes the junction
+// between scaffolds[i] and scaffolds[i+1] - produced by GapEstimator/
+// GapFiller, not by Scaffolder itself.
 
+struct VisGapFill {
+    bool   resolved     = false; // True if bridged via local reassembly over the graph.
+    size_t estimatedGap = 0;     // GapEstimator's estimate, in bases.
+    size_t filledLength = 0;     // Bases actually inserted into genomeSequence at this
+                                  // junction - the reassembled bridge length when resolved,
+                                  // or the N-run length (== estimatedGap) otherwise.
+};
 
 // CONTAINER
 
@@ -78,6 +92,7 @@ struct VisSession {
     // Contig and scaffold data
     std::vector<VisContig>   contigs;
     std::vector<VisScaffold> scaffolds;
+    std::vector<VisGapFill>  gapFills;   // Inter-scaffold junctions, see VisGapFill above.
 
     // Animation step lists
     std::vector<TraversalStep> contigSteps;  // Phase 1 animation

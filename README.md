@@ -14,8 +14,9 @@ against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 
 ![Genome Map](media/assembly_view.png)
 
-> **Status:** Actively developed. Core pipeline is functional end-to-end;
-> gap-size estimation is in progress. See [Known Issues & Roadmap](#known-issues--roadmap).
+> **Status:** Actively developed. Core pipeline is functional end-to-end,
+> including gap estimation and gap filling between scaffolds. See
+> [Known Issues & Roadmap](#known-issues--roadmap).
 
 ---
 
@@ -24,7 +25,8 @@ against real genomes (phiX174, lambda phage, *S. cerevisiae* chromosome I,
 - [Overview](#overview)
 - [Pipeline](#pipeline)
 - [Features](#features)
-- [Validated Results](#validated-results)
+- [Testing Results](#testing-results)
+- [Benchmark Results](#benchmark-results)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
@@ -46,9 +48,13 @@ Given a FASTA/FASTQ input, the pipeline:
 2. Builds a De Bruijn graph, where nodes are k-1 mers and edges are k-mers
 3. Walks the graph to assemble maximal non-branching paths (contigs)
 4. Orders and links contigs into scaffolds using shared boundary k-mers and scoring strategies
-5. Exports the full run (graph stats, contigs, scaffolds, and a step-by-step
+5. Resolves unknown gaps between scaffolds: estimates a gap size from
+   k-mer frequency drop-off at each boundary, then attempts to bridge it
+   with a bounded local search over the existing graph, falling back to an
+   N-run sized by the estimate when no path is found
+6. Exports the full run (graph stats, contigs, scaffolds, and a step-by-step
    animation trace) to a `.visdata` file
-6. Optionally replays that file in a separate GUI to visualize assembly
+7. Optionally replays that file in a separate GUI to visualize assembly
 
 Two assembly strategies are implemented for comparison:
 - **Eulerian path/circuit** (Hierholzer's algorithm) - exact reconstruction,
@@ -75,6 +81,9 @@ Contig Assembler  (branch points + sources, then isolated cycles)
      ▼
 Scaffolder  (skip / greedy / scored resolution strategies)
      │
+     ▼
+Gap Estimator + Gap Filler  (k-mer frequency drop → estimate, bounded
+     │                        local graph search → bridge or N-pad)
      ├──► FASTA output (scaffolds + full pseudo-genome)
      │
      ▼
@@ -92,9 +101,16 @@ Scaffolder  (skip / greedy / scored resolution strategies)
   isolated cycles unreachable from any external entry point
 - Scaffold resolution with three interchangeable strategies:
     - **skip** - never resolve ambiguous branches
-    - **greedy** - take the first available edge
+    - **greedy** - take the highest length-scoring edge
     - **scored** - weighted combination of contig length, k-mer frequency,
       and overlap quality
+- Gap resolution between scaffolds:
+    - **Estimation** - compares k-mer frequency in a window at each contig's
+      boundary against the genome-wide mean; a larger frequency drop maps to
+      a larger estimated gap
+    - **Filling** - bounded breadth-first search over the existing De Bruijn
+      graph (depth capped by the estimate) attempts to find a real bridging
+      path before falling back to an N-run sized by the estimate
 - N50 and assembly statistics reporting at every stage
 
 **Visualizer**
@@ -109,7 +125,7 @@ Scaffolder  (skip / greedy / scored resolution strategies)
   cell grid with click-to-inspect detail panels for each scaffold/gap
 - Built on Dear ImGui + GLFW + OpenGL 3.3, fetched via CMake `FetchContent`
   (no manual dependency setup)
-- 
+
 **User Interface**
 
 <table>
@@ -181,7 +197,8 @@ include/assembler/
 
 media/                # Images included in README
 src/                  # Mirrors include/ layout, also includes configuration pipelines
-tests/                # initialization_tests, processing_tests, construction_tests, scaffolder_tests
+tests/                # initialization_tests, processing_tests, construction_tests,
+                      # scaffolder_tests, gap_tests
 data/
 ├── genomic/          # Input FASTA/FASTQ test genomes
 ├── results/          # Output from UI pipeline
@@ -237,12 +254,6 @@ offers to run again with different settings before exiting.
 **Open bugs (tracked, not yet fixed)**
 - `contig_assembler` doesn't yet initiate walks from sink nodes in every
   case, which is the main source of incomplete traversal on complex graphs
-
-**In progress**
-- Gap size estimation between scaffolds via k-mer frequency drop
-  analysis (`gap_estimation.h`/`.cpp` - currently stubs, already wired
-  into the build)
-- Gap filling using the estimated size (`gap_filling.h`/`.cpp`)
 
 **Planned**
 - K-mer frequency filtering (suppress low-count/error k-mers before

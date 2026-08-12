@@ -28,6 +28,7 @@ void VisExporter::writeHeader(std::ostream& out, const VisSession& session) {
     out << "SCAFFOLD_COUNT "  << session.scaffolds.size()          << '\n';
     out << "CONTIG_STEPS "    << session.contigSteps.size()        << '\n';
     out << "GENOME_LENGTH "   << session.genomeSequence.length()   << '\n';
+    out << "GAPFILL_COUNT "   << session.gapFills.size()           << '\n';
     out << "END_HEADER\n";
 }
 
@@ -91,6 +92,21 @@ void VisExporter::writeScaffolds(std::ostream& out, const VisSession& session) {
     out << "END_SCAFFOLDS\n";
 }
 
+void VisExporter::writeGapFills(std::ostream& out, const VisSession& session) {
+    out << "BEGIN_GAPFILLS\n";
+
+    for (size_t i = 0; i < session.gapFills.size(); ++i) {
+        const VisGapFill& gf = session.gapFills[i];
+        out << "GAPFILL "
+            << i                       << ' '
+            << (gf.resolved ? 1 : 0)   << ' '
+            << gf.estimatedGap         << ' '
+            << gf.filledLength         << '\n';
+    }
+
+    out << "END_GAPFILLS\n";
+}
+
 void VisExporter::writeContigSteps(std::ostream& out, const VisSession& session) {
     out << "BEGIN_CONTIG_STEPS\n";
 
@@ -145,6 +161,7 @@ void VisExporter::write(const VisSession& session, const std::string& filePath) 
     writeGenome(out, session);
     writeContigs(out, session);
     writeScaffolds(out, session);
+    writeGapFills(out, session);
     writeContigSteps(out, session);
 
     if (out.fail())

@@ -38,7 +38,8 @@ private:
 
     // Current file format version. Increment if the format changes
     // in a way that breaks backward compatibility with DataLoader.
-    static constexpr int FORMAT_VERSION = 1;
+    // v2: added the GAPFILL_COUNT header field and BEGIN_GAPFILLS section.
+    static constexpr int FORMAT_VERSION = 2;
 
     /**
      * @brief Encodes a NodeId as a "hi:lo" hex string.
@@ -70,6 +71,13 @@ private:
      *   GAPS    <gap0> <gap1> ...
      */
     static void writeScaffolds(std::ostream& out, const VisSession& session);
+
+    /**
+     * @brief Writes all VisGapFill entries (one per inter-scaffold junction).
+     * Format per entry:
+     *   GAPFILL <index> <resolved:0/1> <estimatedGap> <filledLength>
+     */
+    static void writeGapFills(std::ostream& out, const VisSession& session);
 
     /**
      * @brief Writes the contig animation step list.

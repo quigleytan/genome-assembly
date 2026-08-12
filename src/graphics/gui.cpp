@@ -188,6 +188,7 @@ static const char* stageLabel(AssemblyProgress::Stage stage) {
         case AssemblyProgress::Stage::BuildingGraph:     return "Building graph";
         case AssemblyProgress::Stage::AssemblingContigs: return "Assembling contigs";
         case AssemblyProgress::Stage::Scaffolding:       return "Scaffolding";
+        case AssemblyProgress::Stage::ResolvingGaps:     return "Resolving gaps";
         case AssemblyProgress::Stage::WritingOutput:     return "Writing output";
         case AssemblyProgress::Stage::Complete:          return "Complete";
         case AssemblyProgress::Stage::Failed:            return "Failed";
@@ -199,9 +200,10 @@ static float stageBaseFraction(AssemblyProgress::Stage stage) {
     switch (stage) {
         case AssemblyProgress::Stage::Idle:              return 0.00f;
         case AssemblyProgress::Stage::LoadingReads:      return 0.00f;
-        case AssemblyProgress::Stage::BuildingGraph:     return 0.20f;
-        case AssemblyProgress::Stage::AssemblingContigs: return 0.40f;
-        case AssemblyProgress::Stage::Scaffolding:       return 0.65f;
+        case AssemblyProgress::Stage::BuildingGraph:     return 0.18f;
+        case AssemblyProgress::Stage::AssemblingContigs: return 0.36f;
+        case AssemblyProgress::Stage::Scaffolding:       return 0.58f;
+        case AssemblyProgress::Stage::ResolvingGaps:     return 0.75f;
         case AssemblyProgress::Stage::WritingOutput:     return 0.85f;
         case AssemblyProgress::Stage::Complete:          return 1.00f;
         case AssemblyProgress::Stage::Failed:            return 1.00f;
@@ -211,10 +213,11 @@ static float stageBaseFraction(AssemblyProgress::Stage stage) {
 
 static float stageWidth(AssemblyProgress::Stage stage) {
     switch (stage) {
-        case AssemblyProgress::Stage::LoadingReads:      return 0.20f;
-        case AssemblyProgress::Stage::BuildingGraph:     return 0.20f;
-        case AssemblyProgress::Stage::AssemblingContigs: return 0.25f;
-        case AssemblyProgress::Stage::Scaffolding:       return 0.20f;
+        case AssemblyProgress::Stage::LoadingReads:      return 0.18f;
+        case AssemblyProgress::Stage::BuildingGraph:     return 0.18f;
+        case AssemblyProgress::Stage::AssemblingContigs: return 0.22f;
+        case AssemblyProgress::Stage::Scaffolding:       return 0.17f;
+        case AssemblyProgress::Stage::ResolvingGaps:     return 0.10f;
         case AssemblyProgress::Stage::WritingOutput:     return 0.15f;
         default:                                         return 0.00f;
     }

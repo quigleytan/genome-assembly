@@ -36,7 +36,7 @@ public:
 
 private:
 
-    static constexpr int FORMAT_VERSION = 1;
+    static constexpr int FORMAT_VERSION = 2;
 
     /**
      * @brief Decodes a "hi:lo" hex string back into a NodeId (__uint128_t).
@@ -57,6 +57,7 @@ private:
         size_t contigSteps   = 0;
         size_t eulerSteps    = 0;
         size_t genomeLength  = 0;
+        size_t gapFillCount  = 0;
     };
 
     /**
@@ -85,6 +86,12 @@ private:
      */
     static void parseScaffolds(std::istream& in, VisSession& session,
                                const HeaderCounts& counts);
+
+    /**
+     * @brief Parses the BEGIN_GAPFILLS ... END_GAPFILLS block.
+     */
+    static void parseGapFills(std::istream& in, VisSession& session,
+                              const HeaderCounts& counts);
 
     /**
      * @brief Parses the BEGIN_CONTIG_STEPS ... END_CONTIG_STEPS block.

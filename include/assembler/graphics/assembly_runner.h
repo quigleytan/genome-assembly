@@ -46,6 +46,7 @@ struct AssemblyProgress {
         BuildingGraph,
         AssemblingContigs,
         Scaffolding,
+        ResolvingGaps,
         WritingOutput,
         Complete,
         Failed

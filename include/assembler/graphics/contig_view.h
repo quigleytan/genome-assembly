@@ -98,9 +98,11 @@ private:
     struct GenomeSegment {
         enum class Type { Scaffold, Gap };
         Type   type;
-        size_t index;    // scaffold index or gap index
-        size_t startPos; // position in genomeSequence
+        size_t index;        // scaffold index, or index into session_.gapFills
+        size_t startPos;     // position in genomeSequence
         size_t length;
+        bool   resolved     = false; // Gap segments only: filled via local reassembly
+        size_t estimatedGap = 0;     // Gap segments only: GapEstimator's estimate
     };
     std::vector<GenomeSegment> genomeSegments_; // built in buildDisplayData()
     int selectedSegment_ = -1;                  // -1 = none

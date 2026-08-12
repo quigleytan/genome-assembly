@@ -90,38 +90,57 @@ void ContigView::buildGenomeSegments() {
     const std::string& genome = session_.genomeSequence;
     if (genome.empty()) return;
 
-    size_t scaffoldCount = 0;
-    size_t i = 0;
+    const size_t scaffoldCount = session_.scaffolds.size();
 
-    while (i < genome.size()) {
-        if (genome[i] == 'N') {
-            // Gap - consume run of Ns
-            size_t start = i;
-            while (i < genome.size() && genome[i] == 'N')
-                ++i;
-
-            GenomeSegment seg;
-            seg.type     = GenomeSegment::Type::Gap;
-            seg.index    = 0;
-            seg.startPos = start;
-            seg.length   = i - start;
-            genomeSegments_.push_back(seg);
-
-        } else {
-            // Scaffold - consume run of non-N chars
-            size_t start = i;
-            while (i < genome.size() && genome[i] != 'N')
-                ++i;
+    // gapFills holds exactly one entry per junction between consecutive
+    // scaffolds (see VisSession::gapFills in vis_data.h), so segment
+    // boundaries can be derived directly from scaffold/gap lengths instead
+    // of scanning genomeSequence for 'N' runs. This also correctly surfaces
+    // gaps that GapFiller resolved with real bridging sequence - those
+    // contain no 'N' characters at all, so a content scan would have
+    // silently merged them into the neighboring scaffold.
+    if (scaffoldCount > 0 && session_.gapFills.size() == scaffoldCount - 1) {
+        size_t pos = 0;
+        for (size_t si = 0; si < scaffoldCount; ++si) {
+            size_t scaffoldLen = 0;
+            for (size_t ci : session_.scaffolds[si].contigIndices)
+                if (ci < session_.contigs.size())
+                    scaffoldLen += session_.contigs[ci].sequence.length();
 
             GenomeSegment seg;
             seg.type     = GenomeSegment::Type::Scaffold;
-            seg.index    = scaffoldCount;
-            seg.startPos = start;
-            seg.length   = i - start;
+            seg.index    = si;
+            seg.startPos = pos;
+            seg.length   = scaffoldLen;
             genomeSegments_.push_back(seg);
-            ++scaffoldCount;
+            pos += scaffoldLen;
+
+            if (si + 1 < scaffoldCount) {
+                const VisGapFill& gf = session_.gapFills[si];
+
+                GenomeSegment gapSeg;
+                gapSeg.type         = GenomeSegment::Type::Gap;
+                gapSeg.index        = si;
+                gapSeg.startPos     = pos;
+                gapSeg.length       = gf.filledLength;
+                gapSeg.resolved     = gf.resolved;
+                gapSeg.estimatedGap = gf.estimatedGap;
+                genomeSegments_.push_back(gapSeg);
+                pos += gf.filledLength;
+            }
         }
+        return;
     }
+
+    // Fallback for sessions with no gap-fill data (e.g. a single scaffold,
+    // or a mismatch): treat the whole genome as one Scaffold segment rather
+    // than guessing junction positions.
+    GenomeSegment seg;
+    seg.type     = GenomeSegment::Type::Scaffold;
+    seg.index    = 0;
+    seg.startPos = 0;
+    seg.length   = genome.length();
+    genomeSegments_.push_back(seg);
 }
 
 // COLOR HELPERS
@@ -322,7 +341,10 @@ void ContigView::renderGenomeMapTab(float availHeight) {
             // Choose color
             uint32_t color;
             if (seg.type == GenomeSegment::Type::Gap) {
-                color = IM_COL32(80, 80, 80, 255); // dark gray for N gaps
+                // Amber = bridged via local reassembly, dark gray = N-padded (unresolved)
+                color = seg.resolved
+                    ? IM_COL32(214, 168, 60, 255)
+                    : IM_COL32(80, 80, 80, 255);
             } else {
                 color = scaffoldColor(seg.index);
                 // Dim segments whose scaffold hasn't appeared in animation yet
@@ -384,9 +406,10 @@ void ContigView::renderGenomeMapTab(float availHeight) {
             if (ImGui::IsItemHovered()) {
                 ImGui::BeginTooltip();
                 if (seg.type == GenomeSegment::Type::Gap) {
-                    ImGui::Text("Gap");
-                    ImGui::Text("Length:   %zu Ns", seg.length);
-                    ImGui::Text("Position: %zu", seg.startPos);
+                    ImGui::Text(seg.resolved ? "Gap (resolved)" : "Gap (unresolved)");
+                    ImGui::Text("Length:    %zu bases", seg.length);
+                    ImGui::Text("Estimated: %zu bases", seg.estimatedGap);
+                    ImGui::Text("Position:  %zu", seg.startPos);
                 } else {
                     ImGui::Text("Scaffold %zu", seg.index);
                     if (seg.index < session_.scaffolds.size())
@@ -419,13 +442,25 @@ void ContigView::renderGenomeMapTab(float availHeight) {
     const GenomeSegment& seg = genomeSegments_[selectedSegment_];
 
     if (seg.type == GenomeSegment::Type::Gap) {
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Gap Region");
+        ImGui::TextColored(
+            seg.resolved ? ImVec4(0.90f, 0.72f, 0.30f, 1.0f) : ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+            seg.resolved ? "Gap (Resolved)" : "Gap (Unresolved)");
         ImGui::Separator();
-        ImGui::Text("Length:   %zu Ns", seg.length);
-        ImGui::Text("Position: %zu", seg.startPos);
+        ImGui::Text("Length:    %zu bases", seg.length);
+        ImGui::Text("Estimated: %zu bases", seg.estimatedGap);
+        ImGui::Text("Position:  %zu", seg.startPos);
         ImGui::Spacing();
-        ImGui::TextDisabled("Gap status: unknown");
-        ImGui::TextDisabled("(gap filling not yet run)");
+
+        if (seg.resolved)
+            ImGui::TextWrapped(
+                "Bridged via bounded local reassembly over the de Bruijn "
+                "graph - a real connecting path was found between the "
+                "flanking contigs, so this region is not N-padded.");
+        else
+            ImGui::TextWrapped(
+                "No connecting path was found within the search bound. "
+                "Padded with N's, sized to the k-mer frequency drop "
+                "estimate at the flanking contig boundaries.");
 
     } else {
         ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.4f, 1.0f),
@@ -450,9 +485,14 @@ void ContigView::renderGenomeMapTab(float availHeight) {
                 ImGui::Text("    Length: %zu bases", c.sequence.length());
                 ImGui::Text("    Score:  %.4f", c.score);
 
-                if (i < vs.gaps.size() && vs.gaps[i] == -1)
-                    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                                       "    [gap follows]");
+                if (i < vs.gaps.size() && vs.gaps[i] == -1) {
+                    bool haveGapInfo = seg.index < session_.gapFills.size();
+                    bool resolved    = haveGapInfo && session_.gapFills[seg.index].resolved;
+                    ImGui::TextColored(
+                        resolved ? ImVec4(0.90f, 0.72f, 0.30f, 1.0f) : ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                        "    [gap follows%s]",
+                        haveGapInfo ? (resolved ? " - resolved" : " - unresolved") : "");
+                }
             }
         }
     }
@@ -549,20 +589,49 @@ void ContigView::renderBarPanel(float availWidth, float availHeight) {
             ImVec2 barOrigin = { x0, cursor.y };
             renderContigBar(drawList, barOrigin, ci);
             advanceCursor(BAR_HEIGHT + BAR_SPACING);
-
-            for (size_t ei = 0; ei < vs.contigIndices.size(); ++ei) {
-                if (vs.contigIndices[ei] == ci && ei + 1 < vs.gaps.size()) {
-                    if (vs.gaps[ei] == -1) {
-                        drawList->AddRectFilled(
-                            { x0, cursor.y },
-                            { x0 + GAP_BAR_WIDTH, cursor.y + BAR_HEIGHT * 0.5f },
-                            IM_COL32(100, 100, 100, 180));
-                        advanceCursor(BAR_HEIGHT * 0.5f + BAR_SPACING);
-                    }
-                    break;
-                }
-            }
         }
+
+        // Trailing gap indicator: a scaffold's last contig (in walk order)
+        // always carries an UNKNOWN_GAP marker (see ScaffoldEntry) - this is
+        // the junction GapEstimator/GapFiller resolved between this scaffold
+        // and whichever one follows it in the pseudo-genome.
+        if (!vs.gaps.empty() && vs.gaps.back() == -1) {
+            bool   haveGapInfo  = row.scaffoldIndex < session_.gapFills.size();
+            bool   resolved     = haveGapInfo && session_.gapFills[row.scaffoldIndex].resolved;
+            size_t estimatedGap = haveGapInfo ? session_.gapFills[row.scaffoldIndex].estimatedGap : 0;
+            size_t filledLength = haveGapInfo ? session_.gapFills[row.scaffoldIndex].filledLength : 0;
+
+            uint32_t gapColor = resolved
+                ? IM_COL32(214, 168, 60, 220)
+                : IM_COL32(100, 100, 100, 180);
+
+            ImVec2 gapOrigin = { x0, cursor.y };
+            drawList->AddRectFilled(
+                gapOrigin,
+                ImVec2(gapOrigin.x + GAP_BAR_WIDTH, gapOrigin.y + BAR_HEIGHT * 0.5f),
+                gapColor);
+
+            ImGui::SetCursorScreenPos(gapOrigin);
+            ImGui::InvisibleButton(
+                ("##gap" + std::to_string(row.scaffoldIndex)).c_str(),
+                ImVec2(GAP_BAR_WIDTH, BAR_HEIGHT * 0.5f));
+
+            if (ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                if (haveGapInfo) {
+                    ImGui::Text(resolved ? "Gap: resolved via local reassembly"
+                                          : "Gap: unresolved (N-padded)");
+                    ImGui::Text("Estimated: %zu bases", estimatedGap);
+                    ImGui::Text("Filled:    %zu bases", filledLength);
+                } else {
+                    ImGui::Text("Gap: no resolution data available");
+                }
+                ImGui::EndTooltip();
+            }
+
+            advanceCursor(BAR_HEIGHT * 0.5f + BAR_SPACING);
+        }
+
         advanceCursor(SCAFFOLD_GAP);
     }
 

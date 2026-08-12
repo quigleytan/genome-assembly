@@ -24,12 +24,12 @@
 #include "assembler/core/recorder.h"
 #include "assembler/construction/contig_assembler.h"
 #include "assembler/construction/scaffolder.h"
+#include "assembler/construction/gap_estimation.h"
+#include "assembler/construction/gap_filling.h"
 #include "assembler/graphics/vis_exporter.h"
 
 
 // CONSTANTS
-static constexpr size_t INTER_SCAFFOLD_NS = 10;
-static constexpr size_t UNKNOWN_GAP_NS    = 10;
 static constexpr size_t FASTA_LINE_WIDTH  = 60;
 
 
@@ -117,10 +117,88 @@ static Scaffolder buildScaffolds(
     return scaffolder;
 }
 
+// STAGE 5 - Resolve gaps between scaffolds
+//
+// For each junction between consecutive scaffolds, estimates the gap length
+// from the k-mer frequency drop at the flanking contig ends, then attempts a
+// bounded local reassembly over the graph. A resolved junction contributes
+// its real bridging sequence to genome; an unresolved one contributes an
+// N-run sized to the estimate. Either way, a VisGapFill record is appended
+// so the visualizer can show what happened at that junction.
+
+struct GapFillStats {
+    size_t gapsResolved     = 0;
+    size_t gapsPadded       = 0;
+    size_t totalPaddedBases = 0;
+};
+
+static void resolveGaps(
+    const Scaffolder& scaffolder,
+    const std::vector<ContigAssembler::Contig>& contigs,
+    const GapFiller& filler,
+    VisSession& session,
+    AssemblyProgress& progress)
+{
+    progress.setMessage("Resolving gaps between scaffolds...");
+    progress.progress = 0.1f;
+
+    const auto& scaffolds = scaffolder.getScaffolds();
+
+    std::string genome;
+    session.gapFills.clear();
+    if (!scaffolds.empty())
+        session.gapFills.reserve(scaffolds.size() - 1);
+
+    GapFillStats stats;
+
+    for (size_t i = 0; i < scaffolds.size(); ++i) {
+        for (const auto& entry : scaffolds[i].entries)
+            genome += contigs[entry.contigIndex].sequence;
+
+        if (i + 1 < scaffolds.size()) {
+            const ContigAssembler::Contig& upstream   = contigs[scaffolds[i].entries.back().contigIndex];
+            const ContigAssembler::Contig& downstream = contigs[scaffolds[i + 1].entries.front().contigIndex];
+
+            GapFiller::Result result = filler.fillGap(
+                upstream.sequence, upstream.endNode,
+                downstream.sequence, downstream.startNode);
+
+            VisGapFill gf;
+            gf.resolved     = result.resolved;
+            gf.estimatedGap = result.gapEstimate;
+
+            if (result.resolved) {
+                genome += result.sequence;
+                gf.filledLength = result.sequence.length();
+                ++stats.gapsResolved;
+            } else {
+                genome += std::string(result.gapEstimate, 'N');
+                gf.filledLength = result.gapEstimate;
+                ++stats.gapsPadded;
+                stats.totalPaddedBases += result.gapEstimate;
+            }
+
+            session.gapFills.push_back(gf);
+        }
+
+        progress.progress = scaffolds.size() > 1
+            ? static_cast<float>(i + 1) / static_cast<float>(scaffolds.size())
+            : 1.0f;
+    }
+
+    session.genomeSequence = std::move(genome);
+
+    progress.setMessage("Gaps resolved: " + std::to_string(stats.gapsResolved)
+                        + " via local reassembly, " + std::to_string(stats.gapsPadded)
+                        + " padded with N (" + std::to_string(stats.totalPaddedBases) + " bases)");
+    progress.progress = 1.0f;
+}
+
+// STAGE 6 - Write outputs
+
 static std::string writeOutputs(
     const Scaffolder& scaffolder,
     VisSession& session,
-    const std::vector<ContigAssembler::Contig>& contigs,
     const std::string& inputPath,
     const std::string& outputDir,
     const std::string& strategyName,
@@ -139,16 +217,6 @@ static std::string writeOutputs(
 
     scaffolder.toVisSession(session, k - 1);
 
-    std::string genome;
-    const auto& scaffolds = scaffolder.getScaffolds();
-    for (size_t i = 0; i < scaffolds.size(); ++i) {
-        for (const auto& entry : scaffolds[i].entries)
-            genome += contigs[entry.contigIndex].sequence;
-        if (i + 1 < scaffolds.size())
-            genome += std::string(INTER_SCAFFOLD_NS, 'N');
-    }
-    session.genomeSequence = std::move(genome);
-
     progress.progress = 0.5f;
 
     const std::string fastaPath = outputDir + "/full_reconstructed_genome.fna";
@@ -157,7 +225,7 @@ static std::string writeOutputs(
         if (!out.is_open())
             throw std::runtime_error("Could not write FASTA: " + fastaPath);
 
-        out << ">assembled_genome scaffolds=" << scaffolds.size()
+        out << ">assembled_genome scaffolds=" << scaffolder.getScaffolds().size()
             << " k=" << k << " strategy=" << strategyName << "\n";
 
         const std::string& gs = session.genomeSequence;
@@ -202,10 +270,16 @@ void runAssembly(AssemblyConfig config, AssemblyProgress& progress) {
         Scaffolder scaffolder = buildScaffolds(
             contigs, graph, config.strategy, kTable, progress);
 
-        // Stage 5 - Write outputs
+        // Stage 5 - Resolve gaps between scaffolds
+        progress.stage = AssemblyProgress::Stage::ResolvingGaps;
+        GapEstimator gapEstimator(kTable, config.k);
+        GapFiller    gapFiller(graph, gapEstimator);
+        resolveGaps(scaffolder, contigs, gapFiller, session, progress);
+
+        // Stage 6 - Write outputs
         progress.stage = AssemblyProgress::Stage::WritingOutput;
         std::string visPath = writeOutputs(
-            scaffolder, session, contigs,
+            scaffolder, session,
             config.inputPath, config.outputDir,
             config.strategy, config.k, progress);
 

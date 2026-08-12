@@ -75,6 +75,7 @@ VisLoader::HeaderCounts VisLoader::parseHeader(std::istream& in, VisSession& ses
         else if (key == "EDGE_COUNT")       { iss >> counts.edgeCount;     }
         else if (key == "CONTIG_STEPS")     { iss >> counts.contigSteps;   }
         else if (key == "EULER_STEPS")      { iss >> counts.eulerSteps;    }
+        else if (key == "GAPFILL_COUNT")    { iss >> counts.gapFillCount;  }
         // Unknown header keys are silently ignored for forward compatibility
     }
 
@@ -201,6 +202,36 @@ void VisLoader::parseScaffolds(std::istream& in, VisSession& session,
     }
 }
 
+// GAP FILLS
+
+void VisLoader::parseGapFills(std::istream& in, VisSession& session,
+                               const HeaderCounts& counts) {
+    session.gapFills.reserve(counts.gapFillCount);
+
+    std::string line;
+    std::getline(in, line);
+    if (line != "BEGIN_GAPFILLS")
+        throw std::runtime_error("vis_loader: expected BEGIN_GAPFILLS, got: " + line);
+
+    while (std::getline(in, line)) {
+        if (line == "END_GAPFILLS") break;
+        if (line.empty() || line[0] == '#') continue;
+
+        std::istringstream iss(line);
+        std::string key;
+        iss >> key;
+
+        if (key == "GAPFILL") {
+            VisGapFill gf;
+            size_t index;
+            int resolved;
+            iss >> index >> resolved >> gf.estimatedGap >> gf.filledLength;
+            gf.resolved = (resolved == 1);
+            session.gapFills.push_back(gf);
+        }
+    }
+}
+
 // CONTIG STEPS
 
 void VisLoader::parseContigSteps(std::istream& in, VisSession& session,
@@ -275,6 +306,7 @@ VisSession VisLoader::load(const std::string& filePath) {
     parseGenome(in, session);
     parseContigs(in, session, counts);
     parseScaffolds(in, session, counts);
+    parseGapFills(in, session, counts);
     parseContigSteps(in, session, counts);
 
     return session;
