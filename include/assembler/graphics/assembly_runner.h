@@ -31,7 +31,6 @@ struct AssemblyConfig {
     std::string outputDir;                       // Directory to write output files
     size_t      k                    = 9;        // K-mer size
     std::string strategy             = "scored"; // "skip", "greedy", "scored"
-    size_t      estimatedTotalBases  = 100000;
 };
 
 // ASSEMBLY PROGRESS

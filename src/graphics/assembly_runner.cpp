@@ -37,6 +37,35 @@ static constexpr size_t FASTA_LINE_WIDTH  = 60;
 // Each stage updates progress before and after
 // so the UI shows meaningful state transitions.
 
+/**
+ * @brief Pre-scans a FASTQ file to sum every read's sequence length, so the
+ *        KmerTable can be sized correctly instead of guessing an estimate
+ *        (the table does not support rehashing mid-run). Mirrors
+ *        countFastqBases() in ScaffoldAssembly.cpp so every pipeline sizes
+ *        its KmerTable off the same accurate base count, and therefore gets
+ *        the same 2x load-factor padding from KmerTable's constructor.
+ */
+static size_t countFastqBases(const std::string& path, AssemblyProgress& progress) {
+    progress.setMessage("Scanning " + path + "...");
+    progress.progress = 0.0f;
+
+    std::ifstream file(path);
+    if (!file.is_open())
+        throw std::runtime_error("Could not open file: " + path);
+
+    size_t totalBases = 0;
+    std::string line;
+    size_t lineIndex = 0;
+    while (std::getline(file, line)) {
+        if (lineIndex % 4 == 1) totalBases += line.length();
+        ++lineIndex;
+    }
+
+    progress.setMessage("Total bases: " + std::to_string(totalBases));
+    progress.progress = 0.05f;
+    return totalBases;
+}
+
 static KmerTable loadReads(const std::string& path,
                             size_t k,
                             size_t totalBases,
@@ -252,8 +281,9 @@ void runAssembly(AssemblyConfig config, AssemblyProgress& progress) {
     try {
         // Stage 1 - Load reads
         progress.stage = AssemblyProgress::Stage::LoadingReads;
+        size_t totalBases = countFastqBases(config.inputPath, progress);
         KmerTable kTable = loadReads(config.inputPath, config.k,
-                                     config.estimatedTotalBases, progress);
+                                     totalBases, progress);
 
         // Stage 2 - Build graph
         progress.stage = AssemblyProgress::Stage::BuildingGraph;

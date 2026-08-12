@@ -339,7 +339,6 @@ static void renderLaunchPanel(
             config.outputDir           = std::string(outputBuf);
             config.k                   = static_cast<size_t>(kVal);
             config.strategy            = strategies[strategyIdx];
-            config.estimatedTotalBases = 100000;
 
             progress.stage    = AssemblyProgress::Stage::Idle;
             progress.progress = 0.0f;
