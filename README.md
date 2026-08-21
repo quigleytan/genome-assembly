@@ -3,7 +3,7 @@
 Built as a deep-dive into the algorithms behind real bioinformatics tools like SPAdes and Velvet, implementing every
 component from scratch rather than wrapping existing libraries.
 
-This project consists of a C++17 genome assembly toolkit featuring: 2-bit k-mer encoding, a
+This project consists of a C++17 de novo genome assembly toolkit featuring: 2-bit k-mer encoding, a
 De Bruijn graph, multi-phase contig assembly, scaffold resolution, and a
 standalone OpenGL/ImGui visualizer for inspecting the assembly process.
 
